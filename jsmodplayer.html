@@ -15,6 +15,7 @@
 		<script src="lib/jsmodplayer/src/modplayer.js"></script>
 		<script src="lib/jsmodplayer/src/support.js"></script>
 		<script src="lib/cubicvr/CubicVR.js"></script>
+		<script src="lib/dsp.js"></script>
     <script src="js/audio.js"></script>
 		<script>
 			document.addEventListener('DOMContentLoaded', function (e) {
@@ -28,9 +29,26 @@
           return;
         }
 
-        var audioEngine = new AudioEngine();
+        var fft;
+        var audioBuffer;
+        var signal = new Float32Array(4096);
+        var audioEngine = new AudioEngine(function (data) {
+          fft.forward(data);
+          audioBuffer = data;
+          for (var i=0, l=4096; i<l; ++i) {
+            if (fft.spectrum[i] > signal[i]) {
+              signal[i] = fft.spectrum[i];
+            }
+            else {
+              signal[i]*=0.45;
+            } //if
+          } //for
+        });
+
         audioEngine.playMod('mod.mod');
         audioEngine.audioObject.volume = 1;
+
+        fft = new FFT(4096, 44100);
 
         var logoMaterial = new CubicVR.Material({
           textures: {
@@ -52,34 +70,47 @@
 
         logoMesh.triangulateQuads().compile().clean();
 
+        var tWidth = 200;
+        var tHalfWidth = tWidth/2;
+        var tEdge = tHalfWidth-10;
+        var TWO_PI = Math.PI*2;
+        var skip = 4;
         var floorTextureColor = new CubicVR.CanvasTexture({
           update: function (canvas, ctx) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.lineWidth = 5;
             ctx.fillStyle = "rgb(40, 40, 40)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.strokeStyle = "rgb(200, 200, 200)";
-            ctx.beginPath();
-            ctx.arc(canvas.width/2, canvas.height/2, 250, 0, Math.PI*2, true);
-            ctx.stroke();
+            if (audioBuffer) {
+              for (var i=0, l=signal.length; i<l && i<tEdge; i+=skip) {
+                var c = Math.min(255, Math.round(signal[i] * 1000) + 64);
+                ctx.strokeStyle = "rgb("+c+", "+c+", "+c+")";
+                ctx.beginPath();
+                ctx.arc(tHalfWidth, tHalfWidth, i, 0, TWO_PI, true);
+                ctx.stroke();
+              } //for
+            } //if
           },
-          width: 512,
-          height: 512,
+          width: tWidth,
+          height: tWidth,
         });
 
         var floorTextureBump = new CubicVR.CanvasTexture({
           update: function (canvas, ctx) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.lineWidth = 5;
-            ctx.fillStyle = "rgb(40, 40, 40)";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.strokeStyle = "rgb(200, 200, 200)";
-            ctx.beginPath();
-            ctx.arc(canvas.width/2, canvas.height/2, 250, 0, Math.PI*2, true);
-            ctx.stroke();
+            if (audioBuffer) {
+              for (var i=0, l=signal.length; i<l && i<tEdge; i+=skip) {
+                var c = Math.min(255, Math.round(signal[i] * 1000) + 64);
+                ctx.strokeStyle = "rgb("+c+", "+c+", "+c+")";
+                ctx.beginPath();
+                ctx.arc(tHalfWidth, tHalfWidth, i, 0, TWO_PI, true);
+                ctx.stroke();
+              } //for
+            } //if
           },
-          width: 512,
-          height: 512,
+          width: tWidth,
+          height: tWidth,
         });
 
         var floorTextureNormal = new CubicVR.NormalMapGen(floorTextureBump, 512, 512);
@@ -94,12 +125,12 @@
         });
 
         var floorMesh = CubicVR.primitives.plane({
-          size: 6.0,
+          size: 20.0,
           material: floorMaterial,
           uvmapper: {
             projectionMode: CubicVR.enums.uv.projection.PLANAR,
             projectionAxis: CubicVR.enums.uv.axis.Z,
-            scale: [.5, 1, 1]
+            scale: [20.5, 20.5, 1]
           }
         });
 
@@ -111,13 +142,13 @@
         var logoObject = new CubicVR.SceneObject(logoMesh);
 
         floorObject.rotation[0] = 90;
-        floorObject.position[1] = -2;
+        floorObject.position[1] = -1;
 
         // in this order because of depth buffer quirks
         scene.bindSceneObject(floorObject);
         scene.bindSceneObject(logoObject);
 
-        scene.camera.position = [1, 1, -1];
+        scene.camera.position = [1, 0.5, -1];
         scene.camera.target = [0, 0, 0];
 
         /*
@@ -129,20 +160,39 @@
         planeObject.motion.setBehavior(CubicVR.enums.motion.ROT, 1, CubicVR.enums.envelope.behavior.CONSTANT, CubicVR.enums.envelope.behavior.OFFSET);
         */
 
-        scene.bindLight(new CubicVR.Light({type:CubicVR.enums.light.type.DIRECTIONAL,specular:[1,1,1],direction:CubicVR.vec3.normalize([0.5,-1,0.5])}));
+        var dirLight = new CubicVR.Light({
+          type: CubicVR.enums.light.type.DIRECTIONAL,
+          specular: [1,1,1],
+          direction: CubicVR.vec3.normalize([0.5,-1,0.5])
+        });
+        scene.bindLight(dirLight);
+
+        var pLight = new CubicVR.Light({
+          type: CubicVR.enums.light.type.POINT,
+          specular: [1, 1, 1],
+          intensity: 2,
+          distance: 20,
+          position: [0, 1.5, 0],
+        });
+        scene.bindLight(pLight);
 
         CubicVR.MainLoop(function(timer, gl) {
+          var seconds = timer.getSeconds();
           scene.render();
           scene.evaluate(timer.getSeconds());
-          logoObject.rotation[1] = Math.sin(timer.getSeconds())*180 + Math.sin(timer.getSeconds()/2)*540 + Math.sin(timer.getSeconds()/8)*1080;
+          logoObject.rotation[1] = Math.sin(seconds)*180 + Math.sin(seconds/2)*540 + Math.sin(seconds/8)*1080;
           floorTextureColor.update();
           floorTextureBump.update();
           floorTextureNormal.update();
+          pLight.position[0] = Math.sin(seconds/10)*10;
+          pLight.position[2] = Math.cos(seconds/10)*10;
+          scene.camera.position[0] = 2 * Math.sin(seconds/5) + Math.cos(seconds/2) * 1.5;
+          scene.camera.position[2] = 2 * Math.cos(seconds/5) + Math.cos(seconds/2) * 1.5;
         });
 
         document.body.appendChild(canvas);
 
-        new CubicVR.MouseViewController(canvas, scene.camera);
+        //new CubicVR.MouseViewController(canvas, scene.camera);
 
 			}, false);
 		</script>

@@ -1,4 +1,4 @@
-function AudioEngine () {
+function AudioEngine ( updateFunction ) {
 
   var modPlayer;
   var playing = false;
@@ -33,11 +33,13 @@ function AudioEngine () {
       currentWritePosition += written;	//portionSize;
       currentSampleOffset = outputAudio.mozCurrentSampleOffset();
       playHasStopped = 0;
+      updateFunction(audioData);
       if (written < audioData.length) { // firefox buffer is full, stop writing
         return;
       }
     }
     lastSampleOffset = outputAudio.mozCurrentSampleOffset();
+
   }; //writeAudio
 
   function loadRemote(path) {
