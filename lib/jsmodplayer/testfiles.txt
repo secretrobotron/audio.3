@@ -1,0 +1,69 @@
+All mods are "4 channel M.K" (Protracker) format unless otherwise specified. Created in MilkyTracker
+Notes will generally continue to ring out because the volume effect is not used. (Strict test of 1 effect at a time!)
+This is the correct behavior.
+
+
+basic.mod
+
+	Simple playback. C major scale with 1 sine sample.
+
+	CORRECT:	Plays C scale for one octave
+	WRONG:		Anything else
+
+break.mod
+
+	Test of Dxx pattern break.
+	Frame 1 C major (forward) on row 0x0A
+	Frame 2 C major (backward)
+
+	CORRECT:	Immediately plays C scale BACKWARD
+	WRONG:		Plays C forward first
+
+break_far.mod
+
+	Dxx test. Ensures that player processes offset as DECIMAL not hex.
+	Frame 1 C major (forward) on row 2 after B32 jump
+	Frame 2 C major (backward) on row 0x20
+
+	CORRECT:	Immediately plays C scale BACKWARD
+	WRONG:		Plays C forward first
+
+jump.mod
+
+	Tests Bxx "jump to order" command (specific place in pattern table)
+
+	CORRECT:	Immediately plays C scale BACKWARD.
+	WRONG:		Plays C forward first
+
+fineporta.mod
+
+	Tests E1x, fine pitch slide up.
+	Alternates between normal slide (1xx) and fine slide. Both should sound identical
+
+	CORRECT:	Slides sound identical, and a fixed tone rings out after 6 repeats
+	WRONG:		Slides sound different
+				Pitch continues to slide up after 6 repeats (applying to incorrect rows)
+				One or the other sounds flat (slide not working)
+
+ex_loop.mod
+
+	Test E6x, loop points
+				
+	C major scale with loop point half way through
+
+	CORRECT:	Plays first 4 notes twice followed by whole scale
+	WRONG:		Just plays whole scale
+
+
+
+
+
+
+
+
+
+
+
+
+
+
