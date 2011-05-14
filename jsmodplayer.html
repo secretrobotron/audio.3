@@ -32,7 +32,7 @@
         audioEngine.playMod('mod.mod');
         audioEngine.audioObject.volume = 1;
 
-        var planeMaterial = new CubicVR.Material({
+        var logoMaterial = new CubicVR.Material({
           textures: {
             color: new CubicVR.Texture("img/logo.jpg"),
             alpha: new CubicVR.Texture("img/logo-alpha.jpg"),
@@ -40,9 +40,9 @@
           opacity: 0.99,
         });
 
-        var planeMesh = CubicVR.primitives.plane({
+        var logoMesh = CubicVR.primitives.plane({
           size: 1.0,
-          material: planeMaterial,
+          material: logoMaterial,
           uvmapper: {
             projectionMode: CubicVR.enums.uv.projection.PLANAR,
             projectionAxis: CubicVR.enums.uv.axis.Z,
@@ -50,13 +50,72 @@
           }
         });
 
-        planeMesh.triangulateQuads().compile().clean();
+        logoMesh.triangulateQuads().compile().clean();
+
+        var floorTextureColor = new CubicVR.CanvasTexture({
+          update: function (canvas, ctx) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.lineWidth = 5;
+            ctx.fillStyle = "rgb(40, 40, 40)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = "rgb(200, 200, 200)";
+            ctx.beginPath();
+            ctx.arc(canvas.width/2, canvas.height/2, 250, 0, Math.PI*2, true);
+            ctx.stroke();
+          },
+          width: 512,
+          height: 512,
+        });
+
+        var floorTextureBump = new CubicVR.CanvasTexture({
+          update: function (canvas, ctx) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.lineWidth = 5;
+            ctx.fillStyle = "rgb(40, 40, 40)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = "rgb(200, 200, 200)";
+            ctx.beginPath();
+            ctx.arc(canvas.width/2, canvas.height/2, 250, 0, Math.PI*2, true);
+            ctx.stroke();
+          },
+          width: 512,
+          height: 512,
+        });
+
+        var floorTextureNormal = new CubicVR.NormalMapGen(floorTextureBump, 512, 512);
+
+        var floorMaterial = new CubicVR.Material({
+          textures: {
+            color: floorTextureColor,
+            bump: floorTextureBump,
+            normal: floorTextureNormal,
+          },
+          opacity: 1,
+        });
+
+        var floorMesh = CubicVR.primitives.plane({
+          size: 6.0,
+          material: floorMaterial,
+          uvmapper: {
+            projectionMode: CubicVR.enums.uv.projection.PLANAR,
+            projectionAxis: CubicVR.enums.uv.axis.Z,
+            scale: [.5, 1, 1]
+          }
+        });
+
+        floorMesh.triangulateQuads().compile().clean();
 
         var scene = new CubicVR.Scene(canvas.width, canvas.height, 80);
 
-        var planeObject = new CubicVR.SceneObject(planeMesh);
+        var floorObject = new CubicVR.SceneObject(floorMesh);
+        var logoObject = new CubicVR.SceneObject(logoMesh);
 
-        scene.bindSceneObject(planeObject);
+        floorObject.rotation[0] = 90;
+        floorObject.position[1] = -2;
+
+        // in this order because of depth buffer quirks
+        scene.bindSceneObject(floorObject);
+        scene.bindSceneObject(logoObject);
 
         scene.camera.position = [1, 1, -1];
         scene.camera.target = [0, 0, 0];
@@ -70,13 +129,20 @@
         planeObject.motion.setBehavior(CubicVR.enums.motion.ROT, 1, CubicVR.enums.envelope.behavior.CONSTANT, CubicVR.enums.envelope.behavior.OFFSET);
         */
 
+        scene.bindLight(new CubicVR.Light({type:CubicVR.enums.light.type.DIRECTIONAL,specular:[1,1,1],direction:CubicVR.vec3.normalize([0.5,-1,0.5])}));
+
         CubicVR.MainLoop(function(timer, gl) {
           scene.render();
           scene.evaluate(timer.getSeconds());
-          planeObject.rotation[1] = Math.sin(timer.getSeconds())*180 + Math.sin(timer.getSeconds()/2)*540 + Math.sin(timer.getSeconds()/8)*1080;
+          logoObject.rotation[1] = Math.sin(timer.getSeconds())*180 + Math.sin(timer.getSeconds()/2)*540 + Math.sin(timer.getSeconds()/8)*1080;
+          floorTextureColor.update();
+          floorTextureBump.update();
+          floorTextureNormal.update();
         });
 
         document.body.appendChild(canvas);
+
+        new CubicVR.MouseViewController(canvas, scene.camera);
 
 			}, false);
 		</script>
