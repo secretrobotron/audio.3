@@ -1,16 +1,83 @@
 <!DOCTYPE html>
 <html>
 	<head>
+    <style type="text/css">
+      body {
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        margin: 0;
+        overflow: hidden;
+      }
+    </style>
 		<script src="lib/jsmodplayer/src/modfile.js"></script>
 		<script src="lib/jsmodplayer/src/xmfile.js"></script>
 		<script src="lib/jsmodplayer/src/modplayer.js"></script>
 		<script src="lib/jsmodplayer/src/support.js"></script>
+		<script src="lib/cubicvr/CubicVR.js"></script>
     <script src="js/audio.js"></script>
 		<script>
 			document.addEventListener('DOMContentLoaded', function (e) {
+        var canvas = document.createElement('canvas');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        var gl = CubicVR.GLCore.init(canvas, 'lib/cubicvr/CubicVR_Core.vs', 'lib/cubicvr/CubicVR_Core.fs');
+        
+        if (!gl) {
+          return;
+        }
+
         var audioEngine = new AudioEngine();
         audioEngine.playMod('mod.mod');
         audioEngine.audioObject.volume = 1;
+
+        var planeMaterial = new CubicVR.Material({
+          textures: {
+            color: new CubicVR.Texture("img/logo.jpg"),
+            alpha: new CubicVR.Texture("img/logo-alpha.jpg"),
+          },
+          opacity: 0.99,
+        });
+
+        var planeMesh = CubicVR.primitives.plane({
+          size: 1.0,
+          material: planeMaterial,
+          uvmapper: {
+            projectionMode: CubicVR.enums.uv.projection.PLANAR,
+            projectionAxis: CubicVR.enums.uv.axis.Z,
+            scale: [1, 1, 1]
+          }
+        });
+
+        planeMesh.triangulateQuads().compile().clean();
+
+        var scene = new CubicVR.Scene(canvas.width, canvas.height, 80);
+
+        var planeObject = new CubicVR.SceneObject(planeMesh);
+
+        scene.bindSceneObject(planeObject);
+
+        scene.camera.position = [1, 1, -1];
+        scene.camera.target = [0, 0, 0];
+
+        /*
+        planeObject.motion = new CubicVR.Motion();
+        planeObject.motion.setKey(CubicVR.enums.motion.ROT, 1, 0, 0);
+        planeObject.motion.setKey(CubicVR.enums.motion.ROT, 1, 2.5, -180).tension = 1;
+        planeObject.motion.setKey(CubicVR.enums.motion.ROT, 1, 5, 360).tension = 1;
+        planeObject.motion.setKey(CubicVR.enums.motion.ROT, 1, 6, 360);
+        planeObject.motion.setBehavior(CubicVR.enums.motion.ROT, 1, CubicVR.enums.envelope.behavior.CONSTANT, CubicVR.enums.envelope.behavior.OFFSET);
+        */
+
+        CubicVR.MainLoop(function(timer, gl) {
+          scene.render();
+          scene.evaluate(timer.getSeconds());
+          planeObject.rotation[1] = Math.sin(timer.getSeconds())*180 + Math.sin(timer.getSeconds()/2)*540 + Math.sin(timer.getSeconds()/8)*1080;
+        });
+
+        document.body.appendChild(canvas);
+
 			}, false);
 		</script>
 	</head>
