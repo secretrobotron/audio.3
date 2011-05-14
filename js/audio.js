@@ -10,6 +10,8 @@ function AudioEngine () {
   var currentWritePosition = 0;
   var lastSampleOffset = 0;
 
+  this.audioObject = outputAudio;
+
   function play() {
     playing = true;
   }; //play
