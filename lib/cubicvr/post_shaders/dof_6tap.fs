@@ -5,6 +5,7 @@ uniform sampler2D srcTex;
 uniform sampler2D captureTex;
 varying vec2 vTex;
 uniform vec3 texel;
+uniform vec3 depthInfo;
 
 vec2 filterTaps[6];
 
@@ -26,35 +27,38 @@ void main(void)
 
   float depthSample = 1.0;
 
-  vec2 radius = vec2(texel.x*15.0,texel.y*15.0);
+  vec2 radius = vec2(texel.x*15.0,texel.y*30.0);
   float effect = 0.0;
   vec2 ofsSample;
 
   //	  float colorDiv = 0.0;
+  
+  float dNear = (near_depth-depthInfo.x)/(depthInfo.y);
+  float dFar = (far_depth-depthInfo.x)/(depthInfo.y);
 
-  bool dln = depth_test < near_depth;
-  bool dgf = depth_test > far_depth;
+  bool dln = depth_test < dNear;
+  bool dgf = depth_test > dFar;
 
   for (int i = 0; i < 6; i++)
   {
 	  depthSample = texture2D( captureTex, vec2(vTex.x+filterTaps[i].x*radius.x*effect,vTex.y+filterTaps[i].y*radius.y*effect)).a; 
 	  effect = 0.0;
 
-	  bool ds_gf = depthSample > far_depth;
-	  bool ds_ln = depthSample < near_depth;
+	  bool ds_gf = depthSample > dFar;
+	  bool ds_ln = depthSample < dNear;
 
 	  if (dln || ds_gf)
 	  {
-			effect = (depthSample > depth_test)?((depthSample-far_depth)/(1.0-far_depth)):((depth_test-far_depth)/(1.0-far_depth));	// far		  
+			effect = (depthSample > depth_test)?((depthSample-dFar)/(1.0-dFar)):((depth_test-dFar)/(1.0-dFar));	// far		  
 	  }
 	  else if (dln || ds_ln)
 	  {
-			effect = (depthSample < depth_test)?(1.0-1.0/(near_depth/depthSample)):(1.0-1.0/(near_depth/depth_test)); // near
+			effect = (depthSample < depth_test)?(1.0-1.0/(dNear/depthSample)):(1.0-1.0/(dNear/depth_test)); // near
 	  }
 	  else if ((dln && ds_gf)||(dln && ds_ln))
 	  {
-		  effect = (dln && ds_gf)?(1.0-1.0/(near_depth/depth_test)): //near
-		  ((depth_test-far_depth)/(1.0-far_depth));	// far		  
+		  effect = (dln && ds_gf)?(1.0-1.0/(dNear/depth_test)): //near
+		  ((depth_test-dFar)/(1.0-dFar));	// far		  
 	  }
 
 
