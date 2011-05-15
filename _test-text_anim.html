@@ -23,8 +23,30 @@
 		<script>
     var shaderList = [];
     var fxChain;
-    var letters = [];
-    var scene;
+
+
+    function TextAnimator(bf3d_in,scene_in) {
+      this.bf3d = bf3d_in;
+      this.scene = scene_in;
+      
+      this.genString = function(str_in) {
+        var letters = [];
+        var strlen = str_in.length;
+        var spacing = 0.75;
+        var ofs = -strlen/2.0*spacing;
+
+        for (var i = 0; i < strlen; i++) {
+          var fontObj = new CubicVR.SceneObject({mesh:this.bf3d.chars[str_in.charCodeAt(i)], position:[ofs+i*spacing,0,0], scale:[1,1,1]});
+
+          letters.push(fontObj);
+          
+          this.scene.bindSceneObject(fontObj);
+        }
+        
+        return letters;
+      }
+      
+    }
 
 
 			document.addEventListener('DOMContentLoaded', function (e) {
@@ -239,7 +261,7 @@
 
         floorMesh.triangulateQuads().compile().clean();
 
-        scene = new CubicVR.Scene(canvas.width, canvas.height, 80, 0.01, 100);
+        var scene = new CubicVR.Scene(canvas.width, canvas.height, 80, 0.01, 100);
 
         var floorObject = new CubicVR.SceneObject(floorMesh);
         var logoObject = new CubicVR.SceneObject(logoMesh);
@@ -285,15 +307,15 @@
         
         bf3d.loadFont();
 
-        var fontObj = new CubicVR.SceneObject({mesh:bf3d.chars[65], position:[0,0,0], scale:[1,1,1]});
-        letters.push(fontObj);
-        scene.bindSceneObject(fontObj);
+        var ta = new TextAnimator(bf3d,scene);
+        
+        ta.genString("this is a test");
+
 
         window.addEventListener("keypress",function (e) {
 //          var key=(typeof event!='undefined')?window.event.keyCode:e.keyCode;
 //          fontObj.obj = bf3d.chars[e.charCode];
-            var newfontObj = new CubicVR.SceneObject({mesh:bf3d.chars[e.charCode], position:[(Math.random()-0.5)*10.0,(Math.random())*3.0,(Math.random()-0.5)*10.0], scale:[1,1,1]});
-            letters.push(newfontObj);
+            var newfontObj = new CubicVR.SceneObject({mesh:bf3d.chars[e.charCode], position:[(Math.random()-0.5)*10.0,0,(Math.random()-0.5)*10.0], scale:[1,1,1]});
             scene.bindSceneObject(newfontObj);
         },true);
 
@@ -342,20 +364,12 @@
   				  shaderList[i].enabled = (fxSelect.options[i].selected)?true:false;
   				}
   			}
-  			
-  			function clearLetters() {
-  			  for (var i = 0, iMax = letters.length; i < iMax; i++) {
-  			    scene.removeSceneObject(letters[i]);
-  			    delete letters[i];
-  			  }
-  			  letters = [];
-  			}
 		</script>
 	</head>
 	<body>
 	  <div style='position:absolute; top:10px; left:10px; color:white; font-family:Arial; font-size:14px;'>
       &nbsp;&nbsp;Change FX (multi): <a href="javascript:void(0)" onclick="document.getElementById('fxDiv').style.display=(document.getElementById('fxDiv').style.display=='none')?'':'none';" style='text-decoration:none'>( toggle )</a><div style='' id='fxDiv'><br /><select id="shaderSelector" onchange="selectShaderFX(this)" multiple size="15" style='vertical-align:top'></select><br/>
-        Blur opac: <input type='text' onchange="fxChain.setBlurOpacity(parseFloat(this.value))" size='4' value="1"> intens:<input type='text' onchange="fxChain.setBlurIntensity(parseFloat(this.value))" size='4' value="0"><br/><input type='button' value="Clear Letters" onclick='clearLetters()'></div>
+        Blur opac: <input type='text' onchange="fxChain.setBlurOpacity(parseFloat(this.value))" size='4' value="1"> intens:<input type='text' onchange="fxChain.setBlurIntensity(parseFloat(this.value))" size='4' value="0"><br/></div>
     </div>
 	</body>
 </html>
