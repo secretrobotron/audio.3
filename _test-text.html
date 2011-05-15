@@ -55,11 +55,16 @@
         shaderDOF6 = new CubicVR.PostProcessShader({
           shader_vertex:"lib/cubicvr/post_shaders/fx_general.vs",
           shader_fragment:"lib/cubicvr/post_shaders/dof_6tap.fs",
+          init: function(shader) {
+            shader.addFloat("near_depth");
+				    shader.addFloat("far_depth");				    
+          },
           onupdate: function(shader) {
             // linear depth
               var d = CubicVR.vec3.length(scene.camera.position,scene.camera.target);
-  				    shader.setFloat("near_depth",0.3);
-  				    shader.setFloat("far_depth",5.0);
+
+  				    shader.setFloat("near_depth",(d-0.5-scene.camera.nearclip)/scene.camera.farclip);
+  				    shader.setFloat("far_depth",(d+4-scene.camera.nearclip)/scene.camera.farclip);
           }
         });
 
@@ -112,8 +117,8 @@
 
 
         fxChain = new CubicVR.PostProcessChain(canvas.width,canvas.height,true);
-			  fxChain.setBlurOpacity(0.3);
-			  fxChain.setBlurIntensity(0.7);
+			  fxChain.setBlurOpacity(1);
+			  fxChain.setBlurIntensity(0);
 			  
         
 
@@ -232,7 +237,7 @@
 
         floorMesh.triangulateQuads().compile().clean();
 
-        var scene = new CubicVR.Scene(canvas.width, canvas.height, 80, 0.1, 50);
+        var scene = new CubicVR.Scene(canvas.width, canvas.height, 80, 0.01, 100);
 
         var floorObject = new CubicVR.SceneObject(floorMesh);
         var logoObject = new CubicVR.SceneObject(logoMesh);
@@ -259,15 +264,15 @@
 
         var dirLight = new CubicVR.Light({
           type: CubicVR.enums.light.type.DIRECTIONAL,
-          specular: [1,1,1],
+          specular: [0.4,0.4,0.4],
           direction: CubicVR.vec3.normalize([0.5,-1,0.5])
         });
         scene.bindLight(dirLight);
 
         var pLight = new CubicVR.Light({
           type: CubicVR.enums.light.type.POINT,
-          specular: [1, 1, 1],
-          intensity: 2,
+          specular: [0.4, 0.4, 0.4],
+          intensity: 1,
           distance: 20,
           position: [0, 1.5, 0],
         });
@@ -339,7 +344,7 @@
 	<body>
 	  <div style='position:absolute; top:10px; left:10px; color:white; font-family:Arial; font-size:14px;'>
       &nbsp;&nbsp;Change FX (multi): <a href="javascript:void(0)" onclick="document.getElementById('fxDiv').style.display=(document.getElementById('fxDiv').style.display=='none')?'':'none';" style='text-decoration:none'>( toggle )</a><div style='' id='fxDiv'><br /><select id="shaderSelector" onchange="selectShaderFX(this)" multiple size="15" style='vertical-align:top'></select><br/>
-        Blur opac: <input type='text' onchange="fxChain.setBlurOpacity(parseFloat(this.value))" size='4' value="0.3"> intens:<input type='text' onchange="fxChain.setBlurIntensity(parseFloat(this.value))" size='4' value="0.7"><br/></div>
+        Blur opac: <input type='text' onchange="fxChain.setBlurOpacity(parseFloat(this.value))" size='4' value="1"> intens:<input type='text' onchange="fxChain.setBlurIntensity(parseFloat(this.value))" size='4' value="0"><br/></div>
     </div>
 	</body>
 </html>
