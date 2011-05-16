@@ -70,82 +70,68 @@
 
         logoMesh.triangulateQuads().compile().clean();
 
-        var tWidth = 200;
-        var tHalfWidth = tWidth/2;
-        var tEdge = tHalfWidth-10;
-        var TWO_PI = Math.PI*2;
-        var skip = 4;
-        var floorTextureColor = new CubicVR.CanvasTexture({
-          update: function (canvas, ctx) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.lineWidth = 5;
-            ctx.fillStyle = "rgb(40, 40, 40)";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            if (audioBuffer) {
-              for (var i=0, l=signal.length; i<l && i<tEdge; i+=skip) {
-                var c = Math.min(255, Math.round(signal[i] * 1000) + 64);
-                ctx.strokeStyle = "rgb("+c+", "+c+", "+c+")";
-                ctx.beginPath();
-                ctx.arc(tHalfWidth, tHalfWidth, i, 0, TWO_PI, true);
-                ctx.stroke();
-              } //for
-            } //if
-          },
-          width: tWidth,
-          height: tWidth,
-        });
-
-        var floorTextureBump = new CubicVR.CanvasTexture({
-          update: function (canvas, ctx) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.lineWidth = 5;
-            if (audioBuffer) {
-              for (var i=0, l=signal.length; i<l && i<tEdge; i+=skip) {
-                var c = Math.min(255, Math.round(signal[i] * 1000) + 64);
-                ctx.strokeStyle = "rgb("+c+", "+c+", "+c+")";
-                ctx.beginPath();
-                ctx.arc(tHalfWidth, tHalfWidth, i, 0, TWO_PI, true);
-                ctx.stroke();
-              } //for
-            } //if
-          },
-          width: tWidth,
-          height: tWidth,
-        });
-
-        var floorTextureNormal = new CubicVR.NormalMapGen(floorTextureBump, 512, 512);
-
         var floorMaterial = new CubicVR.Material({
-          textures: {
-            color: floorTextureColor,
-            bump: floorTextureBump,
-            normal: floorTextureNormal,
-          },
+          color: [.4, .4, .4],
           opacity: 1,
         });
 
-        var floorMesh = CubicVR.primitives.plane({
-          size: 20.0,
-          material: floorMaterial,
-          uvmapper: {
-            projectionMode: CubicVR.enums.uv.projection.PLANAR,
-            projectionAxis: CubicVR.enums.uv.axis.Z,
-            scale: [20.5, 20.5, 1]
-          }
-        });
+        var uvplanar = {
+          projectionMode: CubicVR.enums.uv.projection.PLANAR,
+          projectionAxis: CubicVR.enums.uv.axis.Y,
+          scale: [0.5, 0.5, 0.5]
+        };
 
-        floorMesh.triangulateQuads().compile().clean();
+        function makeCylinderLathe(mesh, height, inner_radius, outer_radius, res, material, uvmapper) {
+          var pointList = new Array();
+          var thick = outer_radius-inner_radius;
+          var radius = inner_radius+(thick)/2.0;
+          var transform;
+
+          pointList.push([inner_radius, 0, 0]);
+          pointList.push([inner_radius, height, 0]);
+          pointList.push([inner_radius+thick, height, 0]);
+          pointList.push([inner_radius+thick, 0, 0]);
+
+          pointList.push([inner_radius, 0, 0]);
+          pointList.push([inner_radius+thick, 0, 0]);
+          pointList.push([inner_radius+thick, height, 0]);
+          pointList.push([inner_radius, height, 0]);
+
+          CubicVR.genLatheObject(mesh, pointList, res, material, transform, uvmapper);
+        }
 
         var scene = new CubicVR.Scene(canvas.width, canvas.height, 80);
 
-        var floorObject = new CubicVR.SceneObject(floorMesh);
+        var SOUND_FLOOR_RINGS = 15,
+            SOUND_FLOOR_Y = -1,
+            SOUND_FLOOR_H = 0.25,
+            MAX_WIDTH = 3;
+        var soundFloorRings = [];
+        for (var i=0; i<SOUND_FLOOR_RINGS; ++i) {
+          var soundFloorMesh = new CubicVR.Mesh();
+          makeCylinderLathe(soundFloorMesh, SOUND_FLOOR_H, i*MAX_WIDTH/SOUND_FLOOR_RINGS, (i+1)*MAX_WIDTH/SOUND_FLOOR_RINGS-0.1, 90, floorMaterial, uvplanar);
+          soundFloorMesh.triangulateQuads().compile().clean();
+          var soundFloorObject = new CubicVR.SceneObject(soundFloorMesh);
+          scene.bindSceneObject(soundFloorObject);
+          soundFloorRings.push(soundFloorObject);
+          soundFloorObject.targetY = SOUND_FLOOR_Y;
+        } //for
+
+        function updateSoundFloor() {
+          for (var i=0; i<SOUND_FLOOR_RINGS; ++i) {
+            var newY = SOUND_FLOOR_Y + fft.spectrum[SOUND_FLOOR_RINGS-i] * 10;
+            if (soundFloorRings[i].position[1] < newY) {
+              soundFloorRings[i].position[1] = newY;
+            }
+            else {
+              soundFloorRings[i].position[1] -= (soundFloorRings[i].position[1] - SOUND_FLOOR_Y)*.15;
+            } //if
+          } //for
+        }; //updateSoundFloor
+ 
         var logoObject = new CubicVR.SceneObject(logoMesh);
 
-        floorObject.rotation[0] = 90;
-        floorObject.position[1] = -1;
-
-        // in this order because of depth buffer quirks
-        scene.bindSceneObject(floorObject);
+        // bind this last because of depth buffer quirks
         scene.bindSceneObject(logoObject);
 
         scene.camera.position = [1, 0.5, -1];
@@ -160,7 +146,7 @@
         planeObject.motion.setBehavior(CubicVR.enums.motion.ROT, 1, CubicVR.enums.envelope.behavior.CONSTANT, CubicVR.enums.envelope.behavior.OFFSET);
         */
 
-        var dirLight = new CubicVR.Light({
+       var dirLight = new CubicVR.Light({
           type: CubicVR.enums.light.type.DIRECTIONAL,
           specular: [1,1,1],
           direction: CubicVR.vec3.normalize([0.5,-1,0.5])
@@ -181,13 +167,11 @@
           scene.render();
           scene.evaluate(timer.getSeconds());
           logoObject.rotation[1] = Math.sin(seconds)*180 + Math.sin(seconds/2)*540 + Math.sin(seconds/8)*1080;
-          floorTextureColor.update();
-          floorTextureBump.update();
-          floorTextureNormal.update();
           pLight.position[0] = Math.sin(seconds/10)*10;
           pLight.position[2] = Math.cos(seconds/10)*10;
           scene.camera.position[0] = 2 * Math.sin(seconds/5) + Math.cos(seconds/2) * 1.5;
           scene.camera.position[2] = 2 * Math.cos(seconds/5) + Math.cos(seconds/2) * 1.5;
+          updateSoundFloor();
         });
 
         document.body.appendChild(canvas);
