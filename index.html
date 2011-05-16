@@ -273,8 +273,20 @@
 
         logoMesh.triangulateQuads().compile().clean();
 
+        var floorColorTexture = new CubicVR.CanvasTexture({
+          update: function (canvas, ctx) {
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(0, 0, 256, 256);
+          },
+          width: 256,
+          height: 256,
+        });
+
         var floorMaterial = new CubicVR.Material({
-          color: [.4, .4, .4],
+          //color: [.4, .4, .4],
+          textures: {
+            color: floorColorTexture,
+          },
           opacity: 1,
         });
 
@@ -374,6 +386,8 @@
 
         ml = new CubicVR.MainLoop(function(timer, gl) {
           var seconds = timer.getSeconds();
+
+          floorColorTexture.update();
 
           fxChain.begin();
           gl.clearColor(0.0, 0.0, 0.0, 1.0);
