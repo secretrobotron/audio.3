@@ -117,7 +117,7 @@
 
         function updateSoundFloor(seconds) {
           for (var i=0; i<SOUND_FLOOR_RINGS; ++i) {
-            var newY = SOUND_FLOOR_Y + fft.spectrum[SOUND_FLOOR_RINGS-i] * 10;
+            var newY = SOUND_FLOOR_Y + fft.spectrum[2*(i)] * 10;
             var ring = soundFloorRings[i];
             if (ring.targetY < newY) {
               ring.targetY = newY;
