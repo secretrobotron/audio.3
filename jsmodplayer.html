@@ -88,44 +88,44 @@
           var transform;
 
           pointList.push([inner_radius, 0, 0]);
-          pointList.push([inner_radius, height, 0]);
-          pointList.push([inner_radius+thick, height, 0]);
           pointList.push([inner_radius+thick, 0, 0]);
-
+          pointList.push([inner_radius+thick, height, 0]);
+          pointList.push([inner_radius, height, 0]);
           pointList.push([inner_radius, 0, 0]);
-          pointList.push([inner_radius+thick, 0, 0]);
-          pointList.push([inner_radius+thick, height, 0]);
-          pointList.push([inner_radius, height, 0]);
 
           CubicVR.genLatheObject(mesh, pointList, res, material, transform, uvmapper);
         }
 
         var scene = new CubicVR.Scene(canvas.width, canvas.height, 80);
 
-        var SOUND_FLOOR_RINGS = 15,
-            SOUND_FLOOR_Y = -1,
-            SOUND_FLOOR_H = 0.25,
-            MAX_WIDTH = 3;
+        var SOUND_FLOOR_RINGS = 25,
+            SOUND_FLOOR_Y = -3,
+            SOUND_FLOOR_H = 2.0,
+            SOUND_FLOOR_SPACING = 0.35,
+            MAX_WIDTH = 15;
         var soundFloorRings = [];
         for (var i=0; i<SOUND_FLOOR_RINGS; ++i) {
           var soundFloorMesh = new CubicVR.Mesh();
-          makeCylinderLathe(soundFloorMesh, SOUND_FLOOR_H, i*MAX_WIDTH/SOUND_FLOOR_RINGS, (i+1)*MAX_WIDTH/SOUND_FLOOR_RINGS-0.1, 90, floorMaterial, uvplanar);
+          makeCylinderLathe(soundFloorMesh, SOUND_FLOOR_H, i*MAX_WIDTH/SOUND_FLOOR_RINGS, (i+1)*MAX_WIDTH/SOUND_FLOOR_RINGS-SOUND_FLOOR_SPACING, 3, floorMaterial, uvplanar);
           soundFloorMesh.triangulateQuads().compile().clean();
           var soundFloorObject = new CubicVR.SceneObject(soundFloorMesh);
           scene.bindSceneObject(soundFloorObject);
           soundFloorRings.push(soundFloorObject);
           soundFloorObject.targetY = SOUND_FLOOR_Y;
+          soundFloorObject.rotation[1] = 3*i;
         } //for
 
-        function updateSoundFloor() {
+        function updateSoundFloor(seconds) {
           for (var i=0; i<SOUND_FLOOR_RINGS; ++i) {
             var newY = SOUND_FLOOR_Y + fft.spectrum[SOUND_FLOOR_RINGS-i] * 10;
-            if (soundFloorRings[i].position[1] < newY) {
-              soundFloorRings[i].position[1] = newY;
-            }
-            else {
-              soundFloorRings[i].position[1] -= (soundFloorRings[i].position[1] - SOUND_FLOOR_Y)*.15;
+            var ring = soundFloorRings[i];
+            if (ring.targetY < newY) {
+              ring.targetY = newY;
             } //if
+            ring.position[1] -= (ring.position[1] - ring.targetY)*.25;
+            ring.targetY = Math.max(ring.targetY - 0.01, SOUND_FLOOR_Y);
+            //ring.rotation[1] -= (SOUND_FLOOR_RINGS - i) * 0.05;
+            ring.rotation[1] = Math.sin(seconds + (SOUND_FLOOR_RINGS-i)*0.1)*120;
           } //for
         }; //updateSoundFloor
  
@@ -171,7 +171,7 @@
           pLight.position[2] = Math.cos(seconds/10)*10;
           scene.camera.position[0] = 2 * Math.sin(seconds/5) + Math.cos(seconds/2) * 1.5;
           scene.camera.position[2] = 2 * Math.cos(seconds/5) + Math.cos(seconds/2) * 1.5;
-          updateSoundFloor();
+          updateSoundFloor(seconds);
         });
 
         document.body.appendChild(canvas);
