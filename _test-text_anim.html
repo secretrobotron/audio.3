@@ -23,6 +23,10 @@
 		<script>
     var shaderList = [];
     var fxChain;
+    var bfstr;
+    var ml;
+    var scene;
+    var ta;
 
 
     function TextAnimator(bf3d_in,scene_in) {
@@ -45,7 +49,50 @@
         
         return letters;
       }
+        
+      this.animateString = function(start_time, distance, totaltime, bf_str, anim_method) {
       
+        var strlen = bf_str.length;
+      
+        if (anim_method === "spiral") {
+          for (var j = 0; j < strlen; j++) {
+            if (!bf_str[j].motion) bf_str[j].motion = new CubicVR.Motion();
+            var mot = bf_str[j].motion;
+            var spintotal = 360.0*1.5;
+            var spinstep = (360.0/5.0);
+            var spincount = (spintotal/spinstep);
+            var ystep = distance/spincount;
+            var ypos = distance;
+          
+          console.log((spintotal/spinstep));
+            // console.log(ystep);
+            // console.log(spintotal/5.0);
+            var tofs=0.1*j;
+            var c=0;   
+            for (i = 0; i < spintotal-spinstep; i+=spinstep) {
+              var t = (c/spincount)*totaltime+start_time+tofs;
+              
+              mot.setKey(0,0,t,distance*(1.0-c/spincount)*Math.sin(i*(180.0/M_PI)));
+              mot.setKey(0,1,t,ypos);
+              mot.setKey(0,2,t,distance*(1.0-c/spincount)*Math.cos(i*(180.0/M_PI)));
+
+              mot.setKey(1,0,t,i+tofs);
+              mot.setKey(1,2,t,-i+tofs);
+  // console.log(ypos);            
+              ypos -= ystep;
+              c++;
+            }            
+          
+            mot.setKey(0,0,start_time+totaltime+tofs,bf_str[j].position[0]);
+            mot.setKey(0,1,start_time+totaltime+tofs,bf_str[j].position[1]);
+            mot.setKey(0,2,start_time+totaltime+tofs,bf_str[j].position[2]);
+            mot.setKey(1,0,start_time+totaltime+tofs,0);
+            mot.setKey(1,2,start_time+totaltime+tofs,0);
+          
+          }
+        }
+      }
+ 
     }
 
 
@@ -261,7 +308,7 @@
 
         floorMesh.triangulateQuads().compile().clean();
 
-        var scene = new CubicVR.Scene(canvas.width, canvas.height, 80, 0.01, 100);
+        scene = new CubicVR.Scene(canvas.width, canvas.height, 80, 0.01, 50);
 
         var floorObject = new CubicVR.SceneObject(floorMesh);
         var logoObject = new CubicVR.SceneObject(logoMesh);
@@ -307,19 +354,18 @@
         
         bf3d.loadFont();
 
-        var ta = new TextAnimator(bf3d,scene);
+        ta = new TextAnimator(bf3d,scene);
         
-        ta.genString("this is a test");
+        bfstr = ta.genString("this is a test");
+        ta.animateString(0,5,3,bfstr,"spiral");
+        
 
+        // window.addEventListener("keypress",function (e) {
+        //     var newfontObj = new CubicVR.SceneObject({mesh:bf3d.chars[e.charCode], position:[(Math.random()-0.5)*10.0,0,(Math.random()-0.5)*10.0], scale:[1,1,1]});
+        //     scene.bindSceneObject(newfontObj);
+        // },true);
 
-        window.addEventListener("keypress",function (e) {
-//          var key=(typeof event!='undefined')?window.event.keyCode:e.keyCode;
-//          fontObj.obj = bf3d.chars[e.charCode];
-            var newfontObj = new CubicVR.SceneObject({mesh:bf3d.chars[e.charCode], position:[(Math.random()-0.5)*10.0,0,(Math.random()-0.5)*10.0], scale:[1,1,1]});
-            scene.bindSceneObject(newfontObj);
-        },true);
-
-        CubicVR.MainLoop(function(timer, gl) {
+        ml = new CubicVR.MainLoop(function(timer, gl) {
           var seconds = timer.getSeconds();
           
           fxChain.begin();
@@ -334,9 +380,6 @@
 
           fxChain.render();
           
-          
-          
-          scene.render();
           scene.evaluate(timer.getSeconds());
           logoObject.rotation[1] = Math.sin(seconds)*180 + Math.sin(seconds/2)*540 + Math.sin(seconds/8)*1080;
           floorTextureColor.update();
@@ -344,8 +387,8 @@
           floorTextureNormal.update();
           pLight.position[0] = Math.sin(seconds/10)*10;
           pLight.position[2] = Math.cos(seconds/10)*10;
-          scene.camera.position[0] = 2 * Math.sin(seconds/5) + Math.cos(seconds/2) * 1.5;
-          scene.camera.position[2] = 2 * Math.cos(seconds/5) + Math.cos(seconds/2) * 1.5;
+          scene.camera.position[0] = 5 * Math.sin(seconds/5) + Math.cos(seconds/2) * 3.5;
+          scene.camera.position[2] = 5 * Math.cos(seconds/5) + Math.cos(seconds/2) * 3.5;
         });
 
         document.body.appendChild(canvas);
@@ -364,12 +407,20 @@
   				  shaderList[i].enabled = (fxSelect.options[i].selected)?true:false;
   				}
   			}
+  			
+  			function newText(str) {
+  			  for (var i = 0, iMax = bfstr.length; i < iMax; i++) {
+  			    scene.removeSceneObject(bfstr[i]);
+  			  }
+  			  bfstr = ta.genString(str);
+          ta.animateString(ml.getTimerSeconds(),5,3,bfstr,"spiral");          
+  			}
 		</script>
 	</head>
 	<body>
 	  <div style='position:absolute; top:10px; left:10px; color:white; font-family:Arial; font-size:14px;'>
       &nbsp;&nbsp;Change FX (multi): <a href="javascript:void(0)" onclick="document.getElementById('fxDiv').style.display=(document.getElementById('fxDiv').style.display=='none')?'':'none';" style='text-decoration:none'>( toggle )</a><div style='' id='fxDiv'><br /><select id="shaderSelector" onchange="selectShaderFX(this)" multiple size="15" style='vertical-align:top'></select><br/>
-        Blur opac: <input type='text' onchange="fxChain.setBlurOpacity(parseFloat(this.value))" size='4' value="1"> intens:<input type='text' onchange="fxChain.setBlurIntensity(parseFloat(this.value))" size='4' value="0"><br/></div>
+        Blur opac: <input type='text' onchange="fxChain.setBlurOpacity(parseFloat(this.value))" size='4' value="1"> intens:<input type='text' onchange="fxChain.setBlurIntensity(parseFloat(this.value))" size='4' value="0"><br/><input type='text' value='enter text'><input type='button' value='go' onclick='newText(this.previousSibling.value);'></div>
     </div>
 	</body>
 </html>
