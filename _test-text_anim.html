@@ -382,6 +382,8 @@
                     animkit.transition(ml.getTimerSeconds(), 10, 2, bfstr[i], type_str);
                   } else if (type_str === "spiral") {
                     animkit.transition(ml.getTimerSeconds(), 5, 3, bfstr[i], type_str);
+                  } else if (type_str === "explode") {
+                    animkit.transition(ml.getTimerSeconds(), 20, 3, bfstr[i], type_str);
                   }
                 }
                 
@@ -393,6 +395,8 @@
                    if (type_str === "random") {
                      animkit.transition(ml.getTimerSeconds(), 20, 2, bfstr[i], type_str, trans_str);
                    } else if (type_str === "spiral") {
+                     animkit.transition(ml.getTimerSeconds(), 20, 3, bfstr[i], type_str, trans_str);
+                   } else if (type_str === "explode") {
                      animkit.transition(ml.getTimerSeconds(), 20, 3, bfstr[i], type_str, trans_str);
                    }
                  }
@@ -428,6 +432,9 @@ text</textarea><br />
                     </option>
                     <option value="random">
                         Random
+                    </option>
+                    <option value="explode">
+                        Explode
                     </option>
                 </select>
                 <select id='text_anim_trans'>

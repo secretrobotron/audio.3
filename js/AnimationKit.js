@@ -43,7 +43,7 @@ function AnimationKit() {
                   mot.setKey(1, 0, t, 0);
                   mot.setKey(1, 2, t, 0);
                 } 
-                else if (in_out == "out") {
+                else { // end: if in
                   mot.setKey(0, 0, start_time, sceneObj.children[j].position[0]);
                   mot.setKey(0, 1, start_time, sceneObj.children[j].position[1]);
                   mot.setKey(0, 2, start_time, sceneObj.children[j].position[2]);
@@ -64,10 +64,10 @@ function AnimationKit() {
                       ypos += ystep;
                       c++;
                   }
-                }
-            }
+                } // end: if out
+            } // end: for (j)
 
-        }
+        } // end: anim method 'spiral'
         if (anim_method === "random") {
             for (var j = 0; j < nchild; j++) {
                 if (!sceneObj.children[j].motion) sceneObj.children[j].motion = new CubicVR.Motion();
@@ -82,8 +82,8 @@ function AnimationKit() {
                       mot.setKey(0, 1, t, (Math.random() - 0.5) * distance);
                       mot.setKey(0, 2, t, (Math.random() - 0.5) * distance);
 
-                      mot.setKey(1, 0, t, (Math.random() - 0.5) * 360);
-                      mot.setKey(1, 2, t, (Math.random() - 0.5) * 360);
+                      mot.setKey(1, 0, t, (Math.random()) * 360);
+                      mot.setKey(1, 2, t, (Math.random()) * 360);
                   }
 
                   t = start_time + totaltime
@@ -93,7 +93,7 @@ function AnimationKit() {
                   mot.setKey(0, 2, t, sceneObj.children[j].position[2]);
                   mot.setKey(1, 0, t, 0);
                   mot.setKey(1, 2, t, 0);
-                } else {
+                } else {  // end: if 'in'
                   
                   mot.setKey(0, 0, start_time, sceneObj.children[j].position[0]);
                   mot.setKey(0, 1, start_time, sceneObj.children[j].position[1]);
@@ -108,22 +108,74 @@ function AnimationKit() {
                       mot.setKey(0, 1, t, (Math.random() - 0.5) * distance);
                       mot.setKey(0, 2, t, (Math.random() - 0.5) * distance);
 
-                      mot.setKey(1, 0, t, (Math.random() - 0.5) * 360);
-                      mot.setKey(1, 2, t, (Math.random() - 0.5) * 360);
+                      mot.setKey(1, 0, t, (Math.random()) * 360);
+                      mot.setKey(1, 2, t, (Math.random()) * 360);
                   }
                   
                   t = start_time+totaltime+totaltime/5.0;
 
-                  var r = M_PI*2.0*Math.random();
-                  mot.setKey(0, 0, t, distance*2.0*Math.cos(r));
-                  mot.setKey(0, 1, t, distance*2.0*Math.sin(r));
-                  mot.setKey(0, 2, t, distance*2.0*-Math.sin(r));
+                  var r = CubicVR.vec3.normalize([(Math.random()-0.5)*2.0,(Math.random()-0.5)*2.0,(Math.random()-0.5)*2.0]);
+                  mot.setKey(0, 0, t, distance*r[0]);
+                  mot.setKey(0, 1, t, distance*r[1]);
+                  mot.setKey(0, 2, t, distance*r[2]);
                   mot.setKey(1, 0, t, Math.random()*360.0);
                   mot.setKey(1, 2, t, Math.random()*360.0);
 
-                }
+                } // end: if 'out'
+            } // end: for (j)
+        } // end: anim method 'random'
+        if (anim_method === "explode") {
+            for (var j = 0; j < nchild; j++) {
+                if (!sceneObj.children[j].motion) sceneObj.children[j].motion = new CubicVR.Motion();
+                var mot = sceneObj.children[j].motion;
+               var t;
+                
+                if (in_out==="in") {
+                  t = start_time;
 
-            }
-        }
+                  var r = CubicVR.vec3.normalize([(Math.random()-0.5)*2.0,(Math.random()-0.5)*2.0,(Math.random()-0.5)*2.0]);
+                  mot.setKey(0, 0, t, distance*r[0]);
+                  mot.setKey(0, 1, t, distance*r[1]);
+                  mot.setKey(0, 2, t, distance*r[2]);
+
+                  mot.setKey(1, 0, t, (Math.random()) * 360);
+                  mot.setKey(1, 2, t, (Math.random()) * 360);
+
+                  mot.setKey(1, 0, start_time+totaltime/2.0, (Math.random()) * 360);
+                  mot.setKey(1, 2, start_time+totaltime/2.0, (Math.random()) * 360);
+
+                  t = start_time + totaltime
+
+                  mot.setKey(0, 0, t, sceneObj.children[j].position[0]);
+                  mot.setKey(0, 1, t, sceneObj.children[j].position[1]);
+                  mot.setKey(0, 2, t, sceneObj.children[j].position[2]);
+                  mot.setKey(1, 0, t, 0);
+                  mot.setKey(1, 2, t, 0);
+
+                } else {  // end: if 'in'
+                  t = start_time;
+
+                  mot.setKey(0, 0, t, sceneObj.children[j].position[0]);
+                  mot.setKey(0, 1, t, sceneObj.children[j].position[1]);
+                  mot.setKey(0, 2, t, sceneObj.children[j].position[2]);
+                  mot.setKey(1, 0, t, 0);
+                  mot.setKey(1, 2, t, 0);
+
+                  mot.setKey(1, 0, start_time+totaltime/2.0, Math.random()*360.0);
+                  mot.setKey(1, 2, start_time+totaltime/2.0, Math.random()*360.0);
+
+                  t = start_time+totaltime;
+
+                  var r = CubicVR.vec3.normalize([(Math.random()-0.5)*2.0,(Math.random()-0.5)*2.0,(Math.random()-0.5)*2.0]);
+                  mot.setKey(0, 0, t, distance*r[0]);
+                  mot.setKey(0, 1, t, distance*r[1]);
+                  mot.setKey(0, 2, t, distance*r[2]);
+                  mot.setKey(1, 0, t, Math.random()*360.0);
+                  mot.setKey(1, 2, t, Math.random()*360.0);
+
+                } // end: if 'out'
+            } // end: for (j)
+        } // end: anim method 'explode'
+ 
     }
 }
