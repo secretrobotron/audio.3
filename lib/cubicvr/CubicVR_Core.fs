@@ -124,14 +124,18 @@ void main(void)
   color = texture2D(colorMap, vec2(texCoord.s, texCoord.t)).rgba;
   color.rgb *= mColor;
 #endif
-	if (color.a<=0.9) discard;  
+  if (color.a<=0.9) discard;  
 #else
 	color = vec4(mColor,1.0);
 #endif
 
 #if hasAlphaMap
 	color.a = texture2D(alphaMap, texCoord).r;
+#if alphaDepth
+  if (color.a < 0.9) discard;
+#else
   if (color.a==0.0) discard;
+#endif
 #else
 #if hasAlpha
 	color.a = mAlpha;

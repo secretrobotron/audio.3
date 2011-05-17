@@ -1,4 +1,4 @@
-function bitFont3D(elementSource_in) {
+function bitFont3D(elementSource_in,material,uvmapper) {
   this.element_size = 1.0/8.0;
   this.elementSource = null;
   this.trans = new CubicVR.Transform();
@@ -13,11 +13,11 @@ function bitFont3D(elementSource_in) {
     this.elementSource = obj_in;
   }
   
-  this.setElement = function(type_str) {
+  this.setElement = function(type_str,material,uvmapper,undef) {
     if (type_str === "box") {
-      this.elementSource =  CubicVR.primitives.box({size:this.element_size,material:this.material});
+      this.elementSource =  CubicVR.primitives.box({size:this.element_size,material:material?material:this.material,uvmapper:uvmapper?uvmapper:undef});
     } else if (type_str === "sphere") {
-      this.elementSource =  CubicVR.primitives.sphere({radius:this.element_size/2.0,lon:10,lat:5,material:this.material});
+      this.elementSource =  CubicVR.primitives.sphere({radius:this.element_size/2.0,lon:10,lat:5,material:material?material:this.material,uvmapper:uvmapper?uvmapper:undef});
     } else {
       alert("unknown bf3d element type: "+type_str);
     }
@@ -63,10 +63,10 @@ function bitFont3D(elementSource_in) {
     }
   }
 
-  if (typeof(elementSource_in) === 'object') {
-    this.elementSource = elementSource_in;
-  } else if (typeof(elementSource_in) === 'string') {
-    elementSource_in = this.setElement(elementSource_in);
-  }
+  // if (typeof(elementSource_in) === 'object') {
+  //   this.elementSource = elementSource_in;
+  // } else if (typeof(elementSource_in) === 'string') {
+    elementSource_in = this.setElement(elementSource_in,material,uvmapper);
+  // }
 }
 
