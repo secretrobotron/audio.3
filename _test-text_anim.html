@@ -23,17 +23,16 @@
         </script>
         <script src="js/bitFont3D.js" type="text/javascript" charset="utf-8">
         </script>
-        <script src="js/TextAnimator.js" type="text/javascript" charset="utf-8">
+        <script src="js/AnimationKit.js" type="text/javascript" charset="utf-8">
         </script>        
         <script>
             var shaderList = [];
             var fxChain;
             var bfstr = [];
+            var bf3d;
             var ml;
             var scene;
-            var ta;
-
-
+            var animkit;
 
             document.addEventListener('DOMContentLoaded', function(e) {
 
@@ -300,24 +299,24 @@
                     scale: [1, 1, 1]
                 });
 
-                var bf3d = new bitFont3D("box",bfMaterial,bfUV);
+                bf3d = new bitFont3D("box",bfMaterial,bfUV);
 
                 bf3d.loadFont();
 
-                ta = new TextAnimator(bf3d, scene);                
+                animkit = new AnimationKit();                
 
-                bfstr[0] = ta.genString("this is a test");
-                bfstr[1] = ta.genString("of multiline text");
-                bfstr[2] = ta.genString("animation");
+                bfstr[0] = bf3d.genString("this is a test",scene);
+                bfstr[1] = bf3d.genString("of multiline text",scene);
+                bfstr[2] = bf3d.genString("animation",scene);
                 bfstr[0].rotation = [0,-15,0];
                 bfstr[1].rotation = [0,0,0];
                 bfstr[2].rotation = [0,15,0];
                 bfstr[0].position[1] = 2;
                 bfstr[1].position[1] = 1;
                 bfstr[2].position[1] = 0;
-                ta.animateString(0, 5, 3, bfstr[0], "spiral");
-                ta.animateString(0, 5, 3, bfstr[1], "spiral");
-                ta.animateString(0, 5, 3, bfstr[2], "spiral");
+                animkit.transition(0, 5, 3, bfstr[0], "spiral");
+                animkit.transition(0, 5, 3, bfstr[1], "spiral");
+                animkit.transition(0, 5, 3, bfstr[2], "spiral");
 
 
                 // window.addEventListener("keypress",function (e) {
@@ -376,13 +375,13 @@
                 for (var i = 0; i < lines.length; i++) {
                   lines[i] = lines[i].replace("\n","");
 
-                  bfstr[i] = ta.genString(lines[i]);
+                  bfstr[i] = bf3d.genString(lines[i],scene);
                   bfstr[i].position[1] = numlines-1-i;                  
 
                   if (type_str === "random") {
-                    ta.animateString(ml.getTimerSeconds(), 10, 2, bfstr[i], type_str);
+                    animkit.transition(ml.getTimerSeconds(), 10, 2, bfstr[i], type_str);
                   } else if (type_str === "spiral") {
-                    ta.animateString(ml.getTimerSeconds(), 5, 3, bfstr[i], type_str);
+                    animkit.transition(ml.getTimerSeconds(), 5, 3, bfstr[i], type_str);
                   }
                 }
                 
