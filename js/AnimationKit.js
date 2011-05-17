@@ -37,18 +37,18 @@ function AnimationKit() {
 
                   t = start_time + totaltime + tofs;
 
-                  mot.setKey(0, 0, t, sceneObj.children[j].position[0]);
-                  mot.setKey(0, 1, t, sceneObj.children[j].position[1]);
-                  mot.setKey(0, 2, t, sceneObj.children[j].position[2]);
-                  mot.setKey(1, 0, t, 0);
-                  mot.setKey(1, 2, t, 0);
+                  mot.setKey(0, 0, t, sceneObj.children[j].position[0]).tension=1.0;
+                  mot.setKey(0, 1, t, sceneObj.children[j].position[1]).tension=1.0;
+                  mot.setKey(0, 2, t, sceneObj.children[j].position[2]).tension=1.0;
+                  mot.setKey(1, 0, t, 0).tension=1.0;
+                  mot.setKey(1, 2, t, 0).tension=1.0;
                 } 
                 else { // end: if in
-                  mot.setKey(0, 0, start_time, sceneObj.children[j].position[0]);
-                  mot.setKey(0, 1, start_time, sceneObj.children[j].position[1]);
-                  mot.setKey(0, 2, start_time, sceneObj.children[j].position[2]);
-                  mot.setKey(1, 0, start_time, 0);
-                  mot.setKey(1, 2, start_time, 0);
+                  mot.setKey(0, 0, start_time, sceneObj.children[j].position[0]).tension=1.0;
+                  mot.setKey(0, 1, start_time, sceneObj.children[j].position[1]).tension=1.0;
+                  mot.setKey(0, 2, start_time, sceneObj.children[j].position[2]).tension=1.0;
+                  mot.setKey(1, 0, start_time, 0).tension=1.0;
+                  mot.setKey(1, 2, start_time, 0).tension=1.0;
 
                   ypos = 0;
 
@@ -88,18 +88,18 @@ function AnimationKit() {
 
                   t = start_time + totaltime
 
-                  mot.setKey(0, 0, t, sceneObj.children[j].position[0]);
-                  mot.setKey(0, 1, t, sceneObj.children[j].position[1]);
-                  mot.setKey(0, 2, t, sceneObj.children[j].position[2]);
-                  mot.setKey(1, 0, t, 0);
-                  mot.setKey(1, 2, t, 0);
+                  mot.setKey(0, 0, t, sceneObj.children[j].position[0]).tension=1.0;
+                  mot.setKey(0, 1, t, sceneObj.children[j].position[1]).tension=1.0;
+                  mot.setKey(0, 2, t, sceneObj.children[j].position[2]).tension=1.0;
+                  mot.setKey(1, 0, t, 0).tension=1.0;
+                  mot.setKey(1, 2, t, 0).tension=1.0;
                 } else {  // end: if 'in'
                   
-                  mot.setKey(0, 0, start_time, sceneObj.children[j].position[0]);
-                  mot.setKey(0, 1, start_time, sceneObj.children[j].position[1]);
-                  mot.setKey(0, 2, start_time, sceneObj.children[j].position[2]);
-                  mot.setKey(1, 0, start_time, 0);
-                  mot.setKey(1, 2, start_time, 0);
+                  mot.setKey(0, 0, start_time, sceneObj.children[j].position[0]).tension=1.0;
+                  mot.setKey(0, 1, start_time, sceneObj.children[j].position[1]).tension=1.0;
+                  mot.setKey(0, 2, start_time, sceneObj.children[j].position[2]).tension=1.0;
+                  mot.setKey(1, 0, start_time, 0).tension=1.0;
+                  mot.setKey(1, 2, start_time, 0).tension=1.0;
 
                   for (i = 1; i < totaltime; i += totaltime / 5.0) {
                       t = start_time + i;
@@ -146,20 +146,20 @@ function AnimationKit() {
 
                   t = start_time + totaltime
 
-                  mot.setKey(0, 0, t, sceneObj.children[j].position[0]);
-                  mot.setKey(0, 1, t, sceneObj.children[j].position[1]);
-                  mot.setKey(0, 2, t, sceneObj.children[j].position[2]);
-                  mot.setKey(1, 0, t, 0);
-                  mot.setKey(1, 2, t, 0);
+                  mot.setKey(0, 0, t, sceneObj.children[j].position[0]).tension=1.0;
+                  mot.setKey(0, 1, t, sceneObj.children[j].position[1]).tension=1.0;
+                  mot.setKey(0, 2, t, sceneObj.children[j].position[2]).tension=1.0;
+                  mot.setKey(1, 0, t, 0).tension=1.0;
+                  mot.setKey(1, 2, t, 0).tension=1.0;
 
                 } else {  // end: if 'in'
                   t = start_time;
 
-                  mot.setKey(0, 0, t, sceneObj.children[j].position[0]);
-                  mot.setKey(0, 1, t, sceneObj.children[j].position[1]);
-                  mot.setKey(0, 2, t, sceneObj.children[j].position[2]);
-                  mot.setKey(1, 0, t, 0);
-                  mot.setKey(1, 2, t, 0);
+                  mot.setKey(0, 0, t, sceneObj.children[j].position[0]).tension=1.0;
+                  mot.setKey(0, 1, t, sceneObj.children[j].position[1]).tension=1.0;
+                  mot.setKey(0, 2, t, sceneObj.children[j].position[2]).tension=1.0;
+                  mot.setKey(1, 0, t, 0).tension=1.0;
+                  mot.setKey(1, 2, t, 0).tension=1.0;
 
                   mot.setKey(1, 0, start_time+totaltime/2.0, Math.random()*360.0);
                   mot.setKey(1, 2, start_time+totaltime/2.0, Math.random()*360.0);

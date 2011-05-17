@@ -5,7 +5,7 @@ function bitFont3D(elementSource_in,material,uvmapper) {
   this.chars = [];
   this.material = new CubicVR.Material();
   
-  this.genString = function (str_in,scene) {
+  this.genString = function (str_in) {
       var letters = [];
       var strlen = str_in.length;
       var spacing = 0.75;
@@ -21,10 +21,7 @@ function bitFont3D(elementSource_in,material,uvmapper) {
           });
 
           textObj.bindChild(fontObj);
-          scene.bindSceneObject(fontObj);
       }
-
-      scene.bindSceneObject(textObj);
 
       return textObj;
   }

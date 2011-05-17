@@ -305,9 +305,10 @@
 
                 animkit = new AnimationKit();                
 
-                bfstr[0] = bf3d.genString("this is a test",scene);
-                bfstr[1] = bf3d.genString("of multiline text",scene);
-                bfstr[2] = bf3d.genString("animation",scene);
+                scene.bindSceneObject(bfstr[0] = bf3d.genString("this is a test"));
+                scene.bindSceneObject(bfstr[1] = bf3d.genString("of multiline text"));
+                scene.bindSceneObject(bfstr[2] = bf3d.genString("animation"));
+
                 bfstr[0].rotation = [0,-15,0];
                 bfstr[1].rotation = [0,0,0];
                 bfstr[2].rotation = [0,15,0];
@@ -376,7 +377,8 @@
                   lines[i] = lines[i].replace("\n","");
 
                   bfstr[i] = bf3d.genString(lines[i],scene);
-                  bfstr[i].position[1] = numlines-1-i;                  
+                  bfstr[i].position[1] = numlines-1-i;             
+                  scene.bindSceneObject(bfstr[i]);     
 
                   if (type_str === "random") {
                     animkit.transition(ml.getTimerSeconds(), 10, 2, bfstr[i], type_str);
