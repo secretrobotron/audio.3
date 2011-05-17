@@ -386,6 +386,18 @@
                 }
                 
             }
+            
+            function transitionAway(type_str,trans_str) {
+                 for (var i = 0; i < bfstr.length; i++) {
+     
+                   if (type_str === "random") {
+                     animkit.transition(ml.getTimerSeconds(), 20, 2, bfstr[i], type_str, trans_str);
+                   } else if (type_str === "spiral") {
+                     animkit.transition(ml.getTimerSeconds(), 20, 3, bfstr[i], type_str, trans_str);
+                   }
+                 }
+
+             }
         </script>
     </head>
     
@@ -418,7 +430,15 @@ text</textarea><br />
                         Random
                     </option>
                 </select>
-                <input type='button' value='go' onclick='newText(document.getElementById("text").value,document.getElementById("text_anim_type").options[document.getElementById("text_anim_type").selectedIndex].value);'>
+                <select id='text_anim_trans'>
+                    <option value="in">
+                        In
+                    </option>
+                    <option value="out">
+                        Out
+                    </option>
+                </select>
+                <input type='button' value='go' onclick='if (document.getElementById("text_anim_trans").selectedIndex==0) { newText(document.getElementById("text").value,document.getElementById("text_anim_type").options[document.getElementById("text_anim_type").selectedIndex].value); } else { transitionAway(document.getElementById("text_anim_type").options[document.getElementById("text_anim_type").selectedIndex].value,document.getElementById("text_anim_trans").options[document.getElementById("text_anim_trans").selectedIndex].value); }'>
             </div>
         </div>
     </body>
