@@ -22,13 +22,13 @@
     <script src="js/audio.js"></script>
     <script src="js/bitFont.js" type="text/javascript" charset="utf-8"></script>
     <script src="js/bitFont3D.js" type="text/javascript" charset="utf-8"></script>
+    <script src="js/segment.js"></script>
+    <script src="js/segment1.js"></script>
 		<script>
       var shaderList = [];
       var fxChain;
-      var bfstr;
       var ml;
       var scene;
-      var ta;
 
       function TextAnimator(bf3d_in, scene_in) {
         this.bf3d = bf3d_in;
@@ -222,6 +222,7 @@
         var audioEngine = new AudioEngine(function (data) {
           fft.forward(data);
           audioBuffer = data;
+          audioEngine.audioBuffer = data;
           for (var i=0, l=4096; i<l; ++i) {
             if (fft.spectrum[i] > signal[i]) {
               signal[i] = fft.spectrum[i];
@@ -239,6 +240,7 @@
         var popcorn = Popcorn(basePlayer);
 
         fft = new FFT(4096, 44100);
+        audioEngine.fft = fft;
 
         var logoMaterial = new CubicVR.Material({
           textures: {
@@ -259,91 +261,8 @@
 
         logoMesh.triangulateQuads().compile().clean();
 
-        var floorBumpTexture = new CubicVR.CanvasTexture({
-          update: function (canvas, ctx) {
-            var s = ml.getTimerSeconds();
-            ctx.fillStyle = "#802005";
-            ctx.fillRect(0, 0, 256, 256);
-            ctx.strokeStyle = "#903006";
-            ctx.moveTo(0, 128);
-            ctx.beginPath();
-            for (var i=0; i<256; ++i) {
-              ctx.lineTo(i, Math.min(256, (256+audioBuffer[i]*500)));
-            } //for
-            ctx.stroke();
-          },
-          width: 256,
-          height: 256,
-        });
-
-        var floorNormalTexture = new CubicVR.NormalMapGen(floorBumpTexture);
-
-        var floorMaterial = new CubicVR.Material({
-          color: [0.2, 0.3, 0],
-          textures: {
-            bump: floorBumpTexture,
-            normal: floorNormalTexture,
-          },
-          opacity: 1,
-        });
-
-        var uvplanar = {
-          projectionMode: CubicVR.enums.uv.projection.CUBIC,
-          projectionAxis: CubicVR.enums.uv.axis.X,
-          scale: [3, 3, 1]
-        };
-
-        function makeCylinderLathe(mesh, height, inner_radius, outer_radius, res, material, uvmapper) {
-          var pointList = new Array();
-          var thick = outer_radius-inner_radius;
-          var radius = inner_radius+(thick)/2.0;
-          var transform;
-
-          pointList.push([inner_radius, 0, 0]);
-          pointList.push([inner_radius+thick, 0, 0]);
-          pointList.push([inner_radius+thick, height, 0]);
-          pointList.push([inner_radius, height, 0]);
-          pointList.push([inner_radius, 0, 0]);
-
-          CubicVR.genLatheObject(mesh, pointList, res, material, transform, uvmapper);
-        }
-
         scene = new CubicVR.Scene(canvas.width, canvas.height, 80);
 
-        var SOUND_FLOOR_RINGS = 25,
-            SOUND_FLOOR_Y = -5,
-            SOUND_FLOOR_H = 2.0,
-            SOUND_FLOOR_SPACING = 0.35,
-            MAX_WIDTH = 45;
-        var soundFloorRings = [];
-        var soundFloorRingParent = new CubicVR.SceneObject(new CubicVR.Mesh());
-        for (var i=0; i<SOUND_FLOOR_RINGS; ++i) {
-          var soundFloorMesh = new CubicVR.Mesh();
-          makeCylinderLathe(soundFloorMesh, SOUND_FLOOR_H, i*MAX_WIDTH/SOUND_FLOOR_RINGS, (i+1)*MAX_WIDTH/SOUND_FLOOR_RINGS-SOUND_FLOOR_SPACING, 3, floorMaterial, uvplanar);
-          soundFloorMesh.triangulateQuads().compile().clean();
-          var soundFloorObject = new CubicVR.SceneObject(soundFloorMesh);
-          soundFloorRingParent.bindChild(soundFloorObject);
-          soundFloorRings.push(soundFloorObject);
-          soundFloorObject.targetY = SOUND_FLOOR_Y + i/3;
-          soundFloorObject.baseY = SOUND_FLOOR_Y + i/3;
-          soundFloorObject.rotation[1] = 3*i;
-        } //for
-        scene.bindSceneObject(soundFloorRingParent);
-
-        function updateSoundFloor(seconds) {
-          for (var i=0; i<SOUND_FLOOR_RINGS; ++i) {
-            var ring = soundFloorRings[i];
-            var newY = ring.baseY + fft.spectrum[2*(i)] * 20;
-            if (ring.targetY < newY) {
-              ring.targetY = newY;
-            } //if
-            ring.position[1] -= (ring.position[1] - ring.targetY)*.25;
-            ring.targetY = Math.max(ring.targetY - 0.1, ring.baseY);
-            //ring.rotation[1] -= (SOUND_FLOOR_RINGS - i) * 0.05;
-            ring.rotation[1] = Math.sin(seconds + (SOUND_FLOOR_RINGS-i)*0.1)*120;
-          } //for
-        }; //updateSoundFloor
- 
         var logoObject = new CubicVR.SceneObject(logoMesh);
 
         // bind this last because of depth buffer quirks
@@ -352,15 +271,6 @@
         scene.camera.position = [0, 0.5, 2];
         scene.camera.target = [0, 0, 0];
         CubicVR.setGlobalDepthAlpha(true, scene.camera.nearclip, scene.camera.farclip);
-
-        /*
-        planeObject.motion = new CubicVR.Motion();
-        planeObject.motion.setKey(CubicVR.enums.motion.ROT, 1, 0, 0);
-        planeObject.motion.setKey(CubicVR.enums.motion.ROT, 1, 2.5, -180).tension = 1;
-        planeObject.motion.setKey(CubicVR.enums.motion.ROT, 1, 5, 360).tension = 1;
-        planeObject.motion.setKey(CubicVR.enums.motion.ROT, 1, 6, 360);
-        planeObject.motion.setBehavior(CubicVR.enums.motion.ROT, 1, CubicVR.enums.envelope.behavior.CONSTANT, CubicVR.enums.envelope.behavior.OFFSET);
-        */
 
        var dirLight = new CubicVR.Light({
           type: CubicVR.enums.light.type.DIRECTIONAL,
@@ -382,13 +292,16 @@
         bf3d.loadFont();
         ta = new TextAnimator(bf3d, scene);
 
+        SegmentList.prepareSegments({
+          popcorn: popcorn,
+          audioEngine: audioEngine,
+        });
+        SegmentList.nextSegment();
+
         ml = new CubicVR.MainLoop(function(timer, gl) {
           var seconds = timer.getSeconds();
 
-          if (audioBuffer) {
-            floorBumpTexture.update();
-            floorNormalTexture.update();
-          } //if
+          SegmentList.updateSegments(timer);
 
           fxChain.begin();
           gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -404,34 +317,12 @@
           pLight.position[2] = Math.cos(seconds/10)*10;
           scene.camera.position[0] = 2 + 2 * Math.sin(seconds/1.2) + Math.cos(seconds/2) * 1.5;
           scene.camera.position[2] = 2 + Math.cos(seconds/5) + Math.cos(seconds/2) * 1.5;
-          updateSoundFloor(seconds);
         });
 
         document.body.appendChild(canvas);
 
         //new CubicVR.MouseViewController(canvas, scene.camera);
 
-
-        popcorn.code({
-          start: 1,
-          end: 2,
-          onStart: function (options) {
-            bfstr = ta.genString("#audio welcomes you");
-            ta.animateString(ml.getTimerSeconds(), 5, 3, bfstr, "spiral");
-          },
-        });
-
-        popcorn.code({
-          start: 6,
-          end: 7,
-          onStart: function (options) {
-            for (var i = 0, iMax = bfstr.length; i < iMax; i++) {
-              scene.removeSceneObject(bfstr[i]);
-            }
-            bfstr = ta.genString("to flameparty");
-            ta.animateString(ml.getTimerSeconds(), 5, 3, bfstr, "spiral");
-          },
-        });
         popcorn.play();
         basePlayer.readyState = 2;
 
