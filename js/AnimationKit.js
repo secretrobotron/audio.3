@@ -1,32 +1,6 @@
-function TextAnimator(bf3d_in, scene_in) {
-    this.bf3d = bf3d_in;
-    this.scene = scene_in;
+function AnimationKit() {
 
-    this.genString = function (str_in) {
-        var letters = [];
-        var strlen = str_in.length;
-        var spacing = 0.75;
-        var ofs = -strlen / 2.0 * spacing;
-
-        textObj = new CubicVR.SceneObject(null);
-
-        for (var i = 0; i < strlen; i++) {
-            var fontObj = new CubicVR.SceneObject({
-                mesh: this.bf3d.chars[str_in.charCodeAt(i)],
-                position: [ofs + i * spacing, 0, 0],
-                scale: [1, 1, 1]
-            });
-
-            textObj.bindChild(fontObj);
-            this.scene.bindSceneObject(fontObj);
-        }
-
-        this.scene.bindSceneObject(textObj);
-
-        return textObj;
-    }
-
-    this.animateString = function (start_time, distance, totaltime, bf_str, anim_method) {
+    this.transition = function (start_time, distance, totaltime, bf_str, anim_method, in_out) {
 
         if (!bf_str.children) return;
 
