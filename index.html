@@ -25,6 +25,7 @@
     <script src="js/AnimationKit.js" type="text/javascript" charset="utf-8"></script>
     <script src="js/segment.js"></script>
     <script src="js/segment1.js"></script>
+    <script src="js/segment2.js"></script>
 		<script>
       var shaderList = [];
       var fxChain;
@@ -177,7 +178,7 @@
         var logoObject = new CubicVR.SceneObject(logoMesh);
 
         // bind this last because of depth buffer quirks
-        scene.bindSceneObject(logoObject);
+        //scene.bindSceneObject(logoObject);
 
         scene.camera.position = [0, 0.5, 2];
         scene.camera.target = [0, 0, 0];
@@ -218,6 +219,16 @@
 
         var animKit = new AnimationKit();
 
+        for (var i=0, s=SegmentList.segments, l=s.length; i<l; ++i) {
+          var startTime = s[i].startTime;
+          popcorn.code({
+            start: startTime,
+            end: startTime+1,
+            onStart: function (options) {
+              SegmentList.nextSegment();
+            },
+          });
+        } //for      
         SegmentList.prepareSegments({
           popcorn: popcorn,
           audioEngine: audioEngine,
@@ -225,7 +236,6 @@
           scene: scene,
           animKit: animKit,
         });
-        SegmentList.nextSegment();
 
         CubicVR.MainLoop(function(timer, gl) {
           var seconds = timer.getSeconds();
@@ -244,7 +254,7 @@
 
           scene.evaluate(seconds);
 
-          logoObject.rotation[1] = Math.sin(seconds)*180 + Math.sin(seconds/2)*540 + Math.sin(seconds/8)*1080;
+          //logoObject.rotation[1] = Math.sin(seconds)*180 + Math.sin(seconds/2)*540 + Math.sin(seconds/8)*1080;
           pLight.position[0] = Math.sin(seconds/10)*10;
           pLight.position[2] = Math.cos(seconds/10)*10;
         });

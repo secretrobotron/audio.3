@@ -1,5 +1,6 @@
 function Segment (options) {
   this.active = false;
+  this.startTime = options.startTime || 0;
   this.update = options.update || function (timer) {};
   this.updateFunction = function (timer) {
     if (this.active) {
@@ -21,7 +22,7 @@ var SegmentList = new function () {
 
   this.updateSegments = function (timer) {
     for (var i=0, l=this.segments.length; i<l; ++i) {
-      this.segments[i].update(timer);
+      this.segments[i].updateFunction(timer);
     } //for
   };
 

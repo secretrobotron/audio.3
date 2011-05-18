@@ -58,13 +58,17 @@ SegmentList.addSegment(function () {
         v = Math.max(0.2, v-0.05);
       }
       else if (floorColorMode === 2) {
-        v = 0.4;
+        v = 0.8;
       } //if
 
       ring.position[1] -= (ring.position[1] - ring.targetY)*.25;
       ring.material.color = [Math.min(1, v*(Math.sin(seconds)*.5 + 1)*.5), Math.min(1, v*(Math.sin(seconds-1)*.5 + 1)*.5), Math.min(1, v*(Math.sin(seconds-2)*.5 + 1)*.5)];
-      //ring.rotation[1] -= (SOUND_FLOOR_RINGS - i) * 0.05;
-      ring.rotation[1] = Math.sin(seconds + (SOUND_FLOOR_RINGS-i)*0.1)*120;
+      if (floorShapeMode === 0) {
+        ring.rotation[1] = Math.sin(seconds + (SOUND_FLOOR_RINGS-i)*0.1)*120;
+      }
+      else {
+        ring.rotation[1] = seconds * 100 + 30*i;
+      } //if
     } //for
     if (floorShapeMode === 1) {
       floorBumpTexture.update();
@@ -83,17 +87,13 @@ SegmentList.addSegment(function () {
 
       floorBumpTexture = new CubicVR.CanvasTexture({
         update: function (canvas, ctx) {
-          var s = currentSeconds;
-          ctx.fillStyle = "#000000";
-          ctx.fillRect(0, 0, 256, 256);
-          ctx.strokeStyle = "#ffffff";
-          ctx.moveTo(0, 128);
-          ctx.beginPath();
-          ctx.lineWidth = 2;
-          for (var i=0; i<256; ++i) {
-            ctx.lineTo(i, 128+audioBuffer[i]*500);
+          for (var i=0; i<10; ++i) {
+            var radius = Math.round(Math.random()*3);
+            ctx.fillStyle = Math.random() > 0.5 ? '#ffffff' : '#000000';
+            ctx.beginPath();
+            ctx.arc(Math.floor(Math.random()*256), Math.floor(Math.random()*256), radius, 0, Math.PI*2, true);
+            ctx.fill();
           } //for
-          ctx.stroke();
         },
         width: 256,
         height: 256,
@@ -133,14 +133,18 @@ SegmentList.addSegment(function () {
 
       popcorn.code({
         start: 1,
-        end: 12,
+        end: 13,
         onStart: function (options) {
-          var bfStr = bf3d.genString("#audio welcomes you", scene);
+          var bfStr = bf3d.genString("#audio welcomes you");
           animKit.transition(currentSeconds, 5, 3, bfStr, "spiral");
           options.bfStr = bfStr;
+          scene.bindSceneObject(bfStr);
         },
         onEnd: function (options) {
-          scene.removeSceneObject(options.bfStr);
+          animKit.transition(currentSeconds, 20, 3, options.bfStr, 'explode', 'out');
+          setTimeout(function(){
+            scene.removeSceneObject(options.bfStr);
+          }, 3000);
         },
       });
 
@@ -148,12 +152,16 @@ SegmentList.addSegment(function () {
         start: 9,
         end: 24,
         onStart: function (options) {
-          var bfStr = bf3d.genString("to flameparty", scene);
+          var bfStr = bf3d.genString("to flameparty!!");
           animKit.transition(currentSeconds, 5, 3, bfStr, "spiral");
           options.bfStr = bfStr;
+          scene.bindSceneObject(bfStr);
         },
         onEnd: function (options) {
-          scene.removeSceneObject(options.bfStr);
+          animKit.transition(currentSeconds, 20, 3, options.bfStr, 'explode', 'out');
+          setTimeout(function(){
+            scene.removeSceneObject(options.bfStr);
+          }, 3000);
         },
       });
 
@@ -167,7 +175,7 @@ SegmentList.addSegment(function () {
 
       popcorn.code({
         start: 28,
-        end: 43,
+        end: 29,
         onStart: function (options) {
           for (var i=0; i<soundFloorRings.length; ++i) {
             var ring = soundFloorRings[i];
@@ -181,7 +189,88 @@ SegmentList.addSegment(function () {
         },
       });
 
-      var FINISH_FLOOR = 40;
+      function curveLetters(bfStr) {
+        var tilt = 120/bfStr.children.length;
+        for (var i=0; i<bfStr.children.length; ++i) {
+          var letter = bfStr.children[i];
+          var xofs = letter.position[0];
+          letter.position[2] = bfStr.children.length/2+Math.cos(xofs/2);
+          letter.rotation[1] = xofs * tilt;
+        } //for
+      }; //curveLetters
+
+      function setupLettersMotion(bfStr, startTime, endTime, offset) {
+        offset = offset || [0,0,0];
+        bfStr.position = [0, -20, 0];
+        var mot = bfStr.motion = new CubicVR.Motion();
+        mot.setKey(CubicVR.enums.motion.POS, CubicVR.enums.motion.Y, startTime, -20+offset[1]);
+        mot.setKey(CubicVR.enums.motion.POS, CubicVR.enums.motion.Y, startTime+.5, 0+offset[1]);
+        mot.setKey(CubicVR.enums.motion.ROT, CubicVR.enums.motion.Y, startTime, -180).tension = 1;
+        mot.setKey(CubicVR.enums.motion.ROT, CubicVR.enums.motion.Y, startTime+.5, 0).tension = 1;
+        mot.setBehavior(CubicVR.enums.motion.ROT, CubicVR.enums.motion.Y, CubicVR.enums.envelope.behavior.CONSTANT, CubicVR.enums.envelope.behavior.CONSTANT);
+
+        mot.setKey(CubicVR.enums.motion.POS, CubicVR.enums.motion.Y, endTime, 0+offset[1]);
+        mot.setKey(CubicVR.enums.motion.POS, CubicVR.enums.motion.Y, endTime+.5, -20+offset[1]);
+        mot.setKey(CubicVR.enums.motion.ROT, CubicVR.enums.motion.Y, endTime, 0).tension = 1;
+        mot.setKey(CubicVR.enums.motion.ROT, CubicVR.enums.motion.Y, endTime+.5, 180).tension = 1;
+        mot.setBehavior(CubicVR.enums.motion.ROT, CubicVR.enums.motion.Y, CubicVR.enums.envelope.behavior.CONSTANT, CubicVR.enums.envelope.behavior.CONSTANT);
+ 
+      }; //setupLettersMotion
+
+      popcorn.code({
+        start: 29,
+        end: 33,
+        onStart: function (options) {
+          var bfStr = bf3d.genString('starring');
+          curveLetters(bfStr);
+          options.bfStr = bfStr;
+          setupLettersMotion(bfStr, currentSeconds, currentSeconds+3);
+          bfStr.scale = [3, 3, 3];
+          scene.bindSceneObject(bfStr);
+        },
+        onEnd: function (options) {
+          scene.removeSceneObject(options.bfStr);
+        },
+      });
+
+      popcorn.code({
+        start: 35,
+        end: 39,
+        onStart: function (options) {
+          var bfStr = [bf3d.genString('secret'), bf3d.genString('robotron')];
+          curveLetters(bfStr[0]);
+          curveLetters(bfStr[1]);
+          options.bfStr = bfStr;
+          setupLettersMotion(bfStr[0], currentSeconds, currentSeconds+3);
+          setupLettersMotion(bfStr[1], currentSeconds, currentSeconds+3, [0,-3,0]);
+          bfStr[0].scale = [3, 3, 3];
+          bfStr[1].scale = [3, 3, 3];
+          scene.bindSceneObject(bfStr[0]);
+          scene.bindSceneObject(bfStr[1]);
+        },
+        onEnd: function (options) {
+          scene.removeSceneObject(options.bfStr[0]);
+          scene.removeSceneObject(options.bfStr[1]);
+        },
+      });
+
+      popcorn.code({
+        start: 40,
+        end: 44,
+        onStart: function (options) {
+          var bfStr = bf3d.genString('ccliffe');
+          curveLetters(bfStr);
+          options.bfStr = bfStr;
+          setupLettersMotion(bfStr, currentSeconds, currentSeconds+3);
+          bfStr.scale = [3, 3, 3];
+          scene.bindSceneObject(bfStr);
+        },
+        onEnd: function (options) {
+          scene.removeSceneObject(options.bfStr);
+        },
+      });
+
+      var FINISH_FLOOR = 47;
 
       var mot = soundFloorRingParent.motion = new CubicVR.Motion();
       mot.setKey(CubicVR.enums.motion.POS, CubicVR.enums.motion.Y, FINISH_FLOOR, 0);
@@ -212,12 +301,12 @@ SegmentList.addSegment(function () {
         updateSoundFloor(currentSeconds);
       } //if
       if (floorShapeMode === 0) {
-        scene.camera.position[0] = 2 + 2 * Math.sin(currentSeconds/1.2) + Math.cos(currentSeconds/2) * 1.5;
-        scene.camera.position[2] = 2 + Math.cos(currentSeconds/5) + Math.cos(currentSeconds/2) * 1.5;
+        scene.camera.position[0] = 3 + 4 * Math.sin(currentSeconds/1.2) + Math.cos(currentSeconds/2) * 1.5;
+        scene.camera.position[2] = 3 + Math.sin(currentSeconds/5) + Math.cos(currentSeconds/2) * 1.5;
       }
       else if (floorShapeMode === 1) {
-        scene.camera.position[0] = Math.sin(currentSeconds/5) * 7;
-        scene.camera.position[2] = Math.cos(currentSeconds/5) * 7;
+        scene.camera.position[0] = (scene.camera.position[0] - 0)*.85;
+        scene.camera.position[2] = (scene.camera.position[2] + 4)*.85;
       } //if
     },
   });
