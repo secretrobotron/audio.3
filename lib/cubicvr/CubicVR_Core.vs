@@ -28,13 +28,16 @@
     vec3 lDiff;
     float lInt;
     float lDist;
+#ifdef lightSpot
+    float lCut;
+#endif
   };
  uniform Light lights[loopCount];
  varying vec3 lightDir[loopCount];
 #endif
 
 
-#if lightPoint
+#if lightPoint||lightSpot
   varying vec3 lightPos[loopCount];
 #endif
 
@@ -100,6 +103,14 @@ void main(void)
     for (int i = 0; i < loopCount; i++)
     {
 	    lightDir[i] = uNMatrix * lights[i].lDir;
+    }
+#endif
+
+#if lightSpot
+    for (int i = 0; i < loopCount; i++)
+    {
+	    lightDir[i] = uNMatrix * lights[i].lDir;
+      lightPos[i] = (uMVMatrix*vec4(lights[i].lPos,1.0)).xyz;
     }
 #endif
 
