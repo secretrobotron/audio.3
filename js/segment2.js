@@ -160,7 +160,7 @@ SegmentList.addSegment(function () {
           bfStrs[1].position = [0, 0, 10];
           bfStrs[1].rotation[1] = 180;
           bfStrs[2].scale = [4, 4, 4];
-          bfStrs[2].position = [-4, -4.5, 9.5];
+          bfStrs[2].position = [-10, -4.5, 9.5];
           bfStrs[2].rotation[1] = 190;
 
           var bfStr = bfStrs[0];
