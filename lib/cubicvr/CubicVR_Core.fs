@@ -68,7 +68,7 @@ float getShadowVal(sampler2D shadowTex,vec4 shadowCoord, float proj, float texel
     }
 	}
 
-  shadow /= 12.0;
+  shadow /= 6.0;
   
   return shadow;
 }
