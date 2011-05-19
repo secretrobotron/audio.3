@@ -6,7 +6,7 @@ SegmentList.addSegment(function () {
   var popcorn;
   var scene, animkit, bf3d;
 
-  var spotLight;
+  var spotLight, pointLight;
 
   var cameraTarget = [0,0,0],
       cameraMode = 0,
@@ -98,26 +98,25 @@ SegmentList.addSegment(function () {
       animkit.transition(START_TIME+48, 40, 2, boxObject, "explode");
 
       spotLight = new CubicVR.Light({
-        type: CubicVR.enums.light.type.SPOT_SHADOW,
+        type: CubicVR.enums.light.type.SPOT,
         specular: [0.4,0.4,0.4],
         diffuse: [1,1,1],
         intensity: .3,
         distance: 200,
         cutoff: 400,
-        map_res: 1024,
+        //map_res: 1024,
         position: [0, 8, -8],
       });
 
-      scene.bindLight( new CubicVR.Light({
+      pointLight = new CubicVR.Light({
         type: CubicVR.enums.light.type.POINT,
         specular: [1,1,1],
         intensity: .5,
         distance: 100,
         position: [0, 2, 0],
-      }));
+      });
 
       spotLight.lookat([0, 0, 0]);
-      scene.bindLight(spotLight);
 
       var words = [
         bf3d.genString('Moz Labs'),
@@ -247,6 +246,9 @@ SegmentList.addSegment(function () {
 
     },
     load: function () {
+      shaders['ssao'].enabled = false;
+      scene.bindLight(spotLight);
+      scene.bindLight(pointLight);
       scene.bindSceneObject(boxObject);
     },
     unload: function () {
