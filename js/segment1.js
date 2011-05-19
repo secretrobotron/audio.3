@@ -1,10 +1,8 @@
 SegmentList.addSegment(function () {
 
-  var audioEngine;
-  var audioBuffer, fft;
-  var popcorn;
-  var scene, animKit, bf3d;
-  var targetFOV = 80;
+  var audioEngine, audioBuffer, fft, popcorn;
+  var scene, animKit, bf3d, bfMaterial, targetFOV = 80;
+  var dateTextObjects = [], dirLight, spotLights = [];
 
   function makeCylinderLathe(mesh, height, inner_radius, outer_radius, res, material, uvmapper) {
     var pointList = new Array();
@@ -77,12 +75,6 @@ SegmentList.addSegment(function () {
     } //if
   }; //updateSoundFloor
 
-  var bfMaterial;
-
-  var dateTextObjects = [];
-
-  var spotLights = [];
-
   return new Segment({
     prepare: function (options) {
 
@@ -97,10 +89,10 @@ SegmentList.addSegment(function () {
         type: CubicVR.enums.light.type.SPOT_SHADOW,
         specular: [0.4,0.4,0.4],
         diffuse: [1,1,1],
-        intensity: 1,
+        intensity: .2,
         distance: 100,
         cutoff: 50,
-        map_res: 2048,
+        map_res: 1024,
         position: [-7,10,-5]
       });
 
@@ -112,14 +104,14 @@ SegmentList.addSegment(function () {
         type: CubicVR.enums.light.type.SPOT_SHADOW,
         specular: [0.4,0.4,0.4],
         diffuse: [1,1,1],
-        intensity: 2,
+        intensity: .3,
         distance: 100,
         cutoff: 300,
-        map_res: 2048,
-        position: [-2, 4.5, -4],
+        map_res: 1024,
+        position: [0, 8, 0],
       });
 
-      spotLight.lookat([-2, 3, -4]);
+      spotLight.lookat([-2, 0, -4]);
       scene.bindLight(spotLight);
       spotLights.push(spotLight);
 
@@ -280,6 +272,7 @@ SegmentList.addSegment(function () {
           bfStr.position = [-5, 3.8, -7];
           bfStr.rotation[1] = 45;
           scene.bindSceneObject(bfStr);
+          spotLights[1].lookat(bfStr.position);
         },
         onEnd: function (options) {
           animKit.transition(currentSeconds, 20, 3, options.bfStr, 'explode', 'out');
@@ -314,8 +307,8 @@ SegmentList.addSegment(function () {
           spotLights[1].lookat([0, 0, 0]);
           spotLights[0].cutoff = 400;
           spotLights[1].cutoff = 400;
-          spotLights[0].intensity = .3;
-          spotLights[1].intensity = .3;
+          spotLights[0].intensity = .2;
+          spotLights[1].intensity = .2;
 
           dateTextObjects[0].scale = [50, 40, 1];
           dateTextObjects[0].rotation[1] = 180;
@@ -422,14 +415,26 @@ SegmentList.addSegment(function () {
         }
       });
 
+      dirLight = new CubicVR.Light({
+        type: CubicVR.enums.light.type.DIRECTIONAL,
+        specular: [1,1,1],
+        intensity: .4,
+        direction: CubicVR.vec3.normalize([0.5,-1,0.5])
+      });
+      scene.bindLight(dirLight);
+
     },
     load: function () {
-      shaders['quarterbloom'].enabled = true;
+      shaders['quarterbloom'].enabled = false;
+      shaders['halfbloom'].enabled = true;
       shaders['dof'].enabled = false;
       shaders['ssao'].enabled = true;
       scene.bindSceneObject(soundFloorRingParent);
     },
     unload: function () {
+      scene.removeLight(dirLight);
+      scene.removeLight(spotLights[0]);
+      scene.removeLight(spotLights[1]);
       scene.removeSceneObject(soundFloorRingParent);
     },
     update: function (timer) {

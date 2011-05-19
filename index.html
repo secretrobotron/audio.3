@@ -26,6 +26,7 @@
     <script src="js/segment.js"></script>
     <script src="js/segment1.js"></script>
     <script src="js/segment2.js"></script>
+    <script src="js/segment3.js"></script>
 		<script>
       var shaderList = [];
       var fxChain;
@@ -100,6 +101,7 @@
         });
         shaders['quarterbloom'] = shaderQuarterBloom;
 
+        /*
         var i = 0;
         var shaderActive = 0;
 
@@ -112,6 +114,7 @@
         fxSelect.options[i] = new Option("6-Tap Bloom, 1/4 blend", i++);
         //fxSelect.selectedIndex = fxSelect.options.length-1;
         fxSelect.selectedIndex = shaderActive;
+        */
 
         shaderList.push(shaderDepth);
         shaderList.push(shaderInvert);
@@ -129,7 +132,7 @@
           shaderList[i].enabled = false;
         } //for
 
-        shaderList[fxSelect.selectedIndex].enabled = true;
+        //shaderList[fxSelect.selectedIndex].enabled = true;
 
         var fft;
         var audioBuffer;
@@ -189,14 +192,8 @@
         scene.camera.position = [0, 0.5, 2];
         scene.camera.target = [0, 0, 0];
         CubicVR.setGlobalDepthAlpha(true, scene.camera.nearclip, scene.camera.farclip);
-
-       var dirLight = new CubicVR.Light({
-          type: CubicVR.enums.light.type.DIRECTIONAL,
-          specular: [1,1,1],
-          direction: CubicVR.vec3.normalize([0.5,-1,0.5])
-        });
-        scene.bindLight(dirLight);
-
+       
+        /*
         var pLight = new CubicVR.Light({
           type: CubicVR.enums.light.type.POINT,
           specular: [1, 1, 1],
@@ -205,6 +202,7 @@
           position: [0, 1.5, 0],
         });
         scene.bindLight(pLight);
+        */
 
         for (var i=0, s=SegmentList.segments, l=s.length; i<l; ++i) {
           var startTime = s[i].startTime;
@@ -242,8 +240,8 @@
           scene.evaluate(seconds);
 
           //logoObject.rotation[1] = Math.sin(seconds)*180 + Math.sin(seconds/2)*540 + Math.sin(seconds/8)*1080;
-          pLight.position[0] = Math.sin(seconds/10)*10;
-          pLight.position[2] = Math.cos(seconds/10)*10;
+          //pLight.position[0] = Math.sin(seconds/10)*10;
+          //pLight.position[2] = Math.cos(seconds/10)*10;
         });
 
         document.body.appendChild(canvas);
@@ -264,6 +262,7 @@
 		</script>
 	</head>
 	<body>
+  <!--
         <div style='position:absolute; top:10px; left:10px; color:white; font-family:Arial; font-size:14px;'>
             &nbsp;&nbsp;Change FX (multi):
             <a href="javascript:void(0)" onclick="document.getElementById('fxDiv').style.display=(document.getElementById('fxDiv').style.display=='none')?'':'none';"
@@ -282,6 +281,6 @@
                 <br/>
             </div>
         </div>
-
+  -->
 	</body>
 </html>

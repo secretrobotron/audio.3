@@ -6,9 +6,13 @@ SegmentList.addSegment(function () {
   var popcorn;
   var scene, animkit, bf3d;
 
+  var spotLight;
+
   var cameraTarget = [0,0,0],
       cameraMode = 0,
       cameraPosition = [0,0,0];
+
+  var boxRotation = 0;
 
   function makeWireBoxObject(boxObject,boxSize,boxMesh) {
     for (var i = 1; i <= boxSize; i++) {
@@ -93,6 +97,28 @@ SegmentList.addSegment(function () {
       animkit.transition(START_TIME+28, 50, 2, boxObject, "spiral","out");
       animkit.transition(START_TIME+48, 40, 2, boxObject, "explode");
 
+      spotLight = new CubicVR.Light({
+        type: CubicVR.enums.light.type.SPOT_SHADOW,
+        specular: [0.4,0.4,0.4],
+        diffuse: [1,1,1],
+        intensity: .3,
+        distance: 200,
+        cutoff: 400,
+        map_res: 1024,
+        position: [0, 8, -8],
+      });
+
+      scene.bindLight( new CubicVR.Light({
+        type: CubicVR.enums.light.type.POINT,
+        specular: [1,1,1],
+        intensity: .5,
+        distance: 100,
+        position: [0, 2, 0],
+      }));
+
+      spotLight.lookat([0, 0, 0]);
+      scene.bindLight(spotLight);
+
       var words = [
         bf3d.genString('Moz Labs'),
         bf3d.genString('Alternative Party'),
@@ -145,6 +171,7 @@ SegmentList.addSegment(function () {
         start: START_TIME+35,
         end: START_TIME+50,
         onStart: function (options) {
+          spotLight.position = [0, 8, 0];
           cameraPosition = [2, 5, -9];
           cameraTarget = [0, 3, 8];
           var bfStrs = [
@@ -160,7 +187,7 @@ SegmentList.addSegment(function () {
           bfStrs[1].position = [0, 0, 10];
           bfStrs[1].rotation[1] = 180;
           bfStrs[2].scale = [4, 4, 4];
-          bfStrs[2].position = [-10, -4.5, 9.5];
+          bfStrs[2].position = [-11, -4.5, 11.5];
           bfStrs[2].rotation[1] = 190;
 
           var bfStr = bfStrs[0];
@@ -187,6 +214,8 @@ SegmentList.addSegment(function () {
           animkit.transition(START_TIME+47, 40, 3, bfStrs[1], "explode", "out");
           animkit.transition(START_TIME+47, 40, 3, bfStrs[2], "explode", "out");
 
+          spotLight.lookat(bfStrs[1].position);
+         
           options.bfStrs = bfStrs;
         },
         onEnd: function (options) {
@@ -198,22 +227,40 @@ SegmentList.addSegment(function () {
 
       popcorn.code({
         start: START_TIME+50,
-        end: START_TIME+51,
+        end: START_TIME+53,
         onStart: function (options) {
           cameraTarget = [0, 0, 0];
           cameraPosition = [10, 10, 10];
         },
+        onEnd: function (options) {
+          boxRotation = 1;
+        },
       });
-      
+
+      popcorn.code({
+        start: START_TIME+57,
+        end: START_TIME+60,
+        onStart: function (options) {
+          animkit.transition(START_TIME+57, 300, 3, boxObject, "explode", "out");
+        },
+      });
+
     },
     load: function () {
       scene.bindSceneObject(boxObject);
     },
     unload: function () {
+      while (scene.lights.length > 0) {
+        scene.removeLight(scene.lights[0]);
+      } //while
       scene.removeSceneObject(boxObject);
     },
     update: function (timer) {
       var seconds = timer.getSeconds();
+
+      boxRotation *= 1.1;
+      boxObject.rotation[1] += boxRotation;
+
       if (cameraMode === 0) {
         scene.camera.position[0] = 5 * Math.sin(seconds / 5) + Math.cos(seconds / 2) * 3.5;
         scene.camera.position[2] = 5 * Math.cos(seconds / 5) + Math.cos(seconds / 2) * 3.5;
