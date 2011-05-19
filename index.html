@@ -8,6 +8,7 @@
         padding: 0;
         margin: 0;
         overflow: hidden;
+        background: #000000;
       }
     </style>
 		<script src="lib/jsmodplayer/src/modfile.js"></script>
@@ -31,13 +32,29 @@
       var shaderList = [];
       var fxChain;
       var shaders = {};
+      var gl;
+			var canvas_w, canvas_h, aspect;
+			var canvas, scene;
 
 			document.addEventListener('DOMContentLoaded', function (e) {
-        var canvas = document.createElement('canvas');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        canvas = document.createElement('canvas');
         
-        var gl = CubicVR.GLCore.init(canvas, 'lib/cubicvr/CubicVR_Core.vs', 'lib/cubicvr/CubicVR_Core.fs');
+        canvas.style.position="absolute";
+        
+  			aspect = 1280/720;
+  			canvas_w = window.innerWidth;
+  			canvas_h = canvas_w*(1.0/aspect);
+  			if (canvas_h>window.innerHeight) canvas_h = window.innerHeight;
+
+  			var toppx = (window.innerHeight/2)-(canvas_h/2);
+
+        canvas.width = canvas_w;
+        canvas.height = canvas_h;
+        canvas.style.top = toppx+"px";
+        canvas.style.left = "0px";
+        
+        
+        gl = CubicVR.GLCore.init(canvas, 'lib/cubicvr/CubicVR_Core.vs', 'lib/cubicvr/CubicVR_Core.fs');
         
         if (!gl) {
           return;
@@ -182,7 +199,7 @@
 
         logoMesh.triangulateQuads().compile().clean();
 
-        var scene = new CubicVR.Scene(canvas.width, canvas.height, 80);
+        scene = new CubicVR.Scene(canvas.width, canvas.height, 80);
 
         var logoObject = new CubicVR.SceneObject(logoMesh);
 
@@ -259,6 +276,30 @@
           shaderList[i].enabled = (fxSelect.options[i].selected) ? true : false;
         }
       }
+
+      function setSize() {
+          if (!gl) {
+            return;
+          }
+
+          var width  = window.innerWidth,
+              height = width / aspect;
+
+          function resize(elem) {
+            elem.width = width;
+            elem.height = height;
+            elem.style.top= ((window.innerHeight/2) - (elem.height/2)) + 'px';
+          }
+
+          resize(canvas);
+
+          gl.viewport(0, 0, canvas.width, canvas.height);
+          scene.camera.setDimensions(canvas.width, canvas.height);
+          fxChain.resize(canvas.width, canvas.height);
+        };
+
+
+      window.addEventListener('resize',  function()  { setSize(); }, false);
 
 		</script>
 	</head>
