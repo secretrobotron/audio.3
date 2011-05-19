@@ -301,8 +301,33 @@ vec3 accum = lAmb;
     vec4 shadowCoord = shadowProj[i] / shadowProj[i].w;
 		
     shadowCoord.z = DepthRangeA(ConvertDepth3A(shadowCoord.z,lDepth[i].x,lDepth[i].y),lDepth[i].x,lDepth[i].y);
-		
-		vec4 shadowSample = texture2D(lDepthTex[0],shadowCoord.st);
+
+    vec4 shadowSample;
+
+// this seems to get around a shader crash ...		
+		if (i == 0) { shadowSample = texture2D(lDepthTex[0],shadowCoord.st);} 
+#if loopCount>1		
+		else if (i == 1) { shadowSample = texture2D(lDepthTex[1],shadowCoord.st); }
+#endif
+#if loopCount>2		
+		else if (i == 2) { shadowSample = texture2D(lDepthTex[2],shadowCoord.st); }
+#endif
+#if loopCount>3
+		else if (i == 3) { shadowSample = texture2D(lDepthTex[3],shadowCoord.st);	}
+#endif
+#if loopCount>4		
+		else if (i == 4) { shadowSample = texture2D(lDepthTex[4],shadowCoord.st);	}
+#endif
+#if loopCount>5		
+		else if (i == 5) { shadowSample = texture2D(lDepthTex[5],shadowCoord.st);	}
+#endif
+#if loopCount>6		
+		else if (i == 6) { shadowSample = texture2D(lDepthTex[6],shadowCoord.st);	}
+#endif
+#if loopCount>7
+		else if (i == 7) { shadowSample = texture2D(lDepthTex[7],shadowCoord.st); }
+#endif
+
 		float distanceFromLight = unpackFloatFromVec4i(shadowSample);
 		
 	 	float shadow = 1.0;
