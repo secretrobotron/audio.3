@@ -68,6 +68,67 @@ function AnimationKit() {
             } // end: for (j)
 
         } // end: anim method 'spiral'
+        if (anim_method === "spiral2") {            
+            for (var j = 0; j < nchild; j++) {
+                if (!sceneObj.children[j].motion) sceneObj.children[j].motion = new CubicVR.Motion();
+                var mot = sceneObj.children[j].motion;
+                var spintotal = 360.0 * 1.5;
+                var spinstep = (360.0 / 5.0);
+                var spincount = (spintotal / spinstep);
+                var ystep = distance / spincount;
+                var ypos = distance;
+
+                var t;
+                var tofs = 0.05 * j;
+                var c = 0;
+                
+                if (in_out == "in") {
+                  for (i = 0; i < spintotal - spinstep; i += spinstep) {
+                      t = (c / spincount) * totaltime + start_time + tofs;
+
+                      mot.setKey(0, 0, t, (1.0 - c / spincount)*sceneObj.children[j].position[0]+distance * (1.2 - c / spincount) * Math.sin(i * (180.0 / M_PI)));
+                      mot.setKey(0, 1, t, (1.0 - c / spincount)*sceneObj.children[j].position[1]+ypos);
+                      mot.setKey(0, 2, t, (1.0 - c / spincount)*sceneObj.children[j].position[2]+distance * (1.2 - c / spincount) * Math.cos(i * (180.0 / M_PI)));
+
+                      mot.setKey(1, 0, t, i + tofs);
+                      mot.setKey(1, 2, t, -i + tofs);
+                      ypos -= ystep;
+                      c++;
+                  }
+
+                  t = start_time + totaltime + tofs;
+
+                  mot.setKey(0, 0, t, sceneObj.children[j].position[0]).tension=1.0;
+                  mot.setKey(0, 1, t, sceneObj.children[j].position[1]).tension=1.0;
+                  mot.setKey(0, 2, t, sceneObj.children[j].position[2]).tension=1.0;
+                  mot.setKey(1, 0, t, 0).tension=1.0;
+                  mot.setKey(1, 2, t, 0).tension=1.0;
+                } 
+                else { // end: if in
+                  mot.setKey(0, 0, start_time, sceneObj.children[j].position[0]).tension=1.0;
+                  mot.setKey(0, 1, start_time, sceneObj.children[j].position[1]).tension=1.0;
+                  mot.setKey(0, 2, start_time, sceneObj.children[j].position[2]).tension=1.0;
+                  mot.setKey(1, 0, start_time, 0).tension=1.0;
+                  mot.setKey(1, 2, start_time, 0).tension=1.0;
+
+                  ypos = 0;
+
+                  for (i = spinstep; i < spintotal; i += spinstep) {
+                      t = 1.0+(c / spincount) * totaltime + start_time + tofs;
+
+                      mot.setKey(0, 0, t, (1.0 - c / spincount)*sceneObj.children[j].position[0]+distance * (c / spincount) * Math.sin(i+90 * (180.0 / M_PI)));
+                      mot.setKey(0, 1, t, (1.0 - c / spincount)*sceneObj.children[j].position[1]+ypos);
+                      mot.setKey(0, 2, t, (1.0 - c / spincount)*sceneObj.children[j].position[2]+distance * (c / spincount) * Math.cos(i+90 * (180.0 / M_PI)));
+
+                      mot.setKey(1, 0, t, i + tofs);
+                      mot.setKey(1, 2, t, -i + tofs);
+                      ypos += ystep;
+                      c++;
+                  }
+                } // end: if out
+            } // end: for (j)
+
+        } // end: anim method 'spiral2'        
         if (anim_method === "random") {
             for (var j = 0; j < nchild; j++) {
                 if (!sceneObj.children[j].motion) sceneObj.children[j].motion = new CubicVR.Motion();
@@ -75,7 +136,7 @@ function AnimationKit() {
                var t;
                 
                 if (in_out==="in") {
-                  for (i = 0; i < totaltime; i += totaltime / 5.0) {
+                  for (i = 0; i < totaltime-totaltime / 5.0; i += totaltime / 5.0) {
                       t = start_time + i;
 
                       mot.setKey(0, 0, t, (Math.random() - 0.5) * distance);
