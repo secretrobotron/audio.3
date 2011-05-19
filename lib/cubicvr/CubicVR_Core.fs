@@ -40,6 +40,53 @@ float unpackFloatFromVec4i(const vec4 value)
   return(dot(value, bitSh));
 }
 
+#if softShadow
+float getShadowVal(sampler2D shadowTex,vec4 shadowCoord, float proj, float texel_size) {
+  vec2 filterTaps[6]; 
+	filterTaps[0] = vec2(-0.326212,-0.40581);
+	filterTaps[1] = vec2(-0.840144,-0.07358);
+	filterTaps[2] = vec2(-0.695914,0.457137);
+	filterTaps[3] = vec2(-0.203345,0.620716);
+	filterTaps[4] = vec2(0.96234,-0.194983);
+	filterTaps[5] = vec2(0.473434,-0.480026); 
+/*	filterTaps[6] = vec2(0.519456,0.767022);
+	filterTaps[7] = vec2(0.185461,-0.893124); 
+	filterTaps[8] = vec2(0.507431,0.064425);
+	filterTaps[9] = vec2(0.89642,0.412458) ;
+	filterTaps[10] =vec2(-0.32194,-0.932615);
+	filterTaps[11] =vec2(-0.791559,-0.59771); */
+
+ 	float shadow = 0.0; 	
+	
+	for (int i = 0; i < 6; i++) {
+    vec4 shadowSample = texture2D(shadowTex,shadowCoord.st+filterTaps[i]*(2.0*texel_size));
+
+  	float distanceFromLight = unpackFloatFromVec4i(shadowSample);
+	
+    if (proj > 0.0 && shadowCoord.s>=0.0 && shadowCoord.s<=1.0 && shadowCoord.t >= 0.0 && shadowCoord.t <= 1.0) {
+      shadow += distanceFromLight < shadowCoord.z ? 0.0 : 1.0 ;
+    }
+	}
+
+  shadow /= 12.0;
+  
+  return shadow;
+}
+#else
+float getShadowVal(sampler2D shadowTex,vec4 shadowCoord, float proj, float texel_size) {
+  vec4 shadowSample = texture2D(shadowTex,shadowCoord.st);
+
+	float distanceFromLight = unpackFloatFromVec4i(shadowSample);
+	
+ 	float shadow = 1.0;
+ 	
+  if (proj > 0.0 && shadowCoord.s>=0.0 && shadowCoord.s<=1.0 && shadowCoord.t >= 0.0 && shadowCoord.t <= 1.0) {
+    shadow = distanceFromLight < shadowCoord.z ? 0.0 : 1.0 ;
+  }
+  
+  return shadow;
+}
+#endif
 #endif
 
 
@@ -117,7 +164,6 @@ uniform vec3 lAmb;
 #if lightPoint||lightSpot
   varying vec3 lightPos[loopCount];
 #endif
-
 
 
 
@@ -304,37 +350,30 @@ vec3 accum = lAmb;
 
     vec4 shadowSample;
 
+    float shadow = 1.0;
 // this seems to get around a shader crash ...		
-		if (i == 0) { shadowSample = texture2D(lDepthTex[0],shadowCoord.st);} 
+		if (i == 0) { shadow = getShadowVal(lDepthTex[0],shadowCoord,shadowProj[i].w,lDepth[i].z);} 
 #if loopCount>1		
-		else if (i == 1) { shadowSample = texture2D(lDepthTex[1],shadowCoord.st); }
+		else if (i == 1) { shadow = getShadowVal(lDepthTex[1],shadowCoord,shadowProj[i].w,lDepth[i].z); }
 #endif
 #if loopCount>2		
-		else if (i == 2) { shadowSample = texture2D(lDepthTex[2],shadowCoord.st); }
+		else if (i == 2) { shadow = getShadowVal(lDepthTex[2],shadowCoord,shadowProj[i].w,lDepth[i].z); }
 #endif
 #if loopCount>3
-		else if (i == 3) { shadowSample = texture2D(lDepthTex[3],shadowCoord.st);	}
+		else if (i == 3) { shadow = getShadowVal(lDepthTex[3],shadowCoord,shadowProj[i].w,lDepth[i].z);	}
 #endif
 #if loopCount>4		
-		else if (i == 4) { shadowSample = texture2D(lDepthTex[4],shadowCoord.st);	}
+		else if (i == 4) { shadow = getShadowVal(lDepthTex[4],shadowCoord,shadowProj[i].w,lDepth[i].z);	}
 #endif
 #if loopCount>5		
-		else if (i == 5) { shadowSample = texture2D(lDepthTex[5],shadowCoord.st);	}
+		else if (i == 5) { shadow = getShadowVal(lDepthTex[5],shadowCoord,shadowProj[i].w,lDepth[i].z);	}
 #endif
 #if loopCount>6		
-		else if (i == 6) { shadowSample = texture2D(lDepthTex[6],shadowCoord.st);	}
+		else if (i == 6) { shadow = getShadowVal(lDepthTex[6],shadowCoord,shadowProj[i].w,lDepth[i].z);	}
 #endif
 #if loopCount>7
-		else if (i == 7) { shadowSample = texture2D(lDepthTex[7],shadowCoord.st); }
+		else if (i == 7) { shadow = getShadowVal(lDepthTex[7],shadowCoord,shadowProj[i].w,lDepth[i].z); }
 #endif
-
-		float distanceFromLight = unpackFloatFromVec4i(shadowSample);
-		
-	 	float shadow = 1.0;
-	 	
-    if (shadowProj[i].w > 0.0 && shadowCoord.s>=0.0 && shadowCoord.s<=1.0 && shadowCoord.t >= 0.0 && shadowCoord.t <= 1.0) {
-      shadow = distanceFromLight < shadowCoord.z ? 0.0 : 1.0 ;
-    }
 	 		
      att = att * shadow;
 #endif
