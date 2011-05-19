@@ -18,7 +18,7 @@
 	varying vec4 vPosition;
   varying vec3 camPos;
 
-
+#if !depthPack
 
 #if loopCount
   struct Light {
@@ -34,6 +34,11 @@
   };
  uniform Light lights[loopCount];
  varying vec3 lightDir[loopCount];
+#endif
+
+#if hasShadow
+  varying vec4 shadowProj[loopCount];
+  uniform mat4 spMatrix[loopCount];
 #endif
 
 
@@ -56,19 +61,23 @@
 	varying vec3 eyeVec; 
 #endif
 
+#endif // !depthPack
+
 void main(void) 
 {
   mat4 uMVOMatrix = uMVMatrix * uOMatrix;
   mat4 uMVPMatrix = uPMatrix * uMVMatrix;
-
-	vTextureCoord = aTextureCoord;
 
 	vPosition = uMVOMatrix * vec4(aVertexPosition, 1.0);
 
 	camPos.xyz = vec3(0.0,0.0,0.0);
 	
 	gl_Position = uMVPMatrix * uOMatrix * vec4(aVertexPosition, 1.0);
+
+#if !depthPack
 	
+	vTextureCoord = aTextureCoord;
+
   vNormal = uNMatrix * normalize(uOMatrix*vec4(aNormal,0.0)).xyz;
 
 
@@ -111,6 +120,9 @@ void main(void)
     {
 	    lightDir[i] = uNMatrix * lights[i].lDir;
       lightPos[i] = (uMVMatrix*vec4(lights[i].lPos,1.0)).xyz;
+#if hasShadow
+      shadowProj[i] = spMatrix[i] * (uOMatrix * vec4(aVertexPosition, 1.0));
+#endif      
     }
 #endif
 
@@ -135,4 +147,5 @@ void main(void)
 #endif
 #endif
 
+#endif // !depthPack
 }

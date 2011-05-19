@@ -305,7 +305,7 @@ SegmentList.addSegment(function () {
           });
         
           scene.bindLight(spotLight);
-          spotLight.lookAt([5.0*Math.sin(currentSeconds),0,5.0*Math.sin(currentSeconds)]);
+          spotLight.lookat([5.0*Math.sin(currentSeconds),0,5.0*Math.sin(currentSeconds)]);
  
         },
         onEnd: function (options) {

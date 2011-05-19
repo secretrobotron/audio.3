@@ -10,12 +10,46 @@
 
   varying vec2 vTextureCoord;
 
-#if alphaDepth
+#if alphaDepth||depthPack||hasShadow
   uniform vec3 depthInfo;
   float ConvertDepth3(float d) { return (depthInfo.x*depthInfo.y)/(depthInfo.y-d*(depthInfo.y-depthInfo.x));  }
   // transform range in world-z to 0-1 for near-far
   float DepthRange( float d ) { return ( d - depthInfo.x ) / ( depthInfo.y - depthInfo.x ); }
+
+  float ConvertDepth3A(float d, float near, float far) { return (near*far)/(far-d*(far-near));  }
+  // transform range in world-z to 0-1 for near-far
+  float DepthRangeA( float d, float near, float far ) { return ( d - near ) / ( far - near ); }
 #endif
+
+#if depthPack
+  vec4 packFloatToVec4i(const float value)
+  {
+    const vec4 bitSh = vec4(256.0*256.0*256.0, 256.0*256.0, 256.0, 1.0);
+    const vec4 bitMsk = vec4(0.0, 1.0/256.0, 1.0/256.0, 1.0/256.0);
+    vec4 res = fract(value * bitSh);
+    res -= res.xxyz * bitMsk;
+    return res;
+  }
+
+#endif
+
+#if hasShadow
+float unpackFloatFromVec4i(const vec4 value)
+{
+  const vec4 bitSh = vec4(1.0/(256.0*256.0*256.0), 1.0/(256.0*256.0), 1.0/256.0, 1.0);
+  return(dot(value, bitSh));
+}
+
+#endif
+
+
+#if hasShadow
+  varying vec4 shadowProj[loopCount];
+  uniform sampler2D lDepthTex[loopCount];
+  uniform vec3 lDepth[loopCount];
+#endif
+
+
 
 #if hasColorMap
 	uniform sampler2D colorMap;
@@ -67,7 +101,7 @@
     vec3 lDiff;
     float lInt;
     float lDist;
-    #ifdef lightSpot
+    #if lightSpot
         float lCut;
     #endif
   };
@@ -79,9 +113,11 @@ uniform vec3 mSpec;
 uniform float mShine;
 uniform vec3 lAmb;
 
+
 #if lightPoint||lightSpot
   varying vec3 lightPos[loopCount];
 #endif
+
 
 
 
@@ -92,6 +128,8 @@ uniform mat4 uPMatrix;
 
 void main(void) 
 {
+#if !depthPack
+
 	vec3 n;
 	vec4 color = vec4(0.0,0.0,0.0,0.0);
 	
@@ -101,9 +139,9 @@ void main(void)
   vec3 eye = normalize(eyeVec); 
   vec2 texCoord = vTextureCoord.xy + (eye.xy * v);
 #else 
-#if hasColorMap||hasBumpMap||hasNormalMap||hasAmbientMap||hasSpecularMap||hasAlphaMap
+//#if hasColorMap||hasBumpMap||hasNormalMap||hasAmbientMap||hasSpecularMap||hasAlphaMap
 	vec2 texCoord = vTextureCoord;
-#endif
+//#endif
 #endif
 
 
@@ -134,7 +172,7 @@ void main(void)
 
 #if hasAlphaMap
 	color.a = texture2D(alphaMap, texCoord).r;
-#if alphaDepth
+#if alphaDepth||depthPack
   if (color.a < 0.9) discard;
 #else
   if (color.a==0.0) discard;
@@ -259,6 +297,23 @@ vec3 accum = lAmb;
 
     float power = (NdotL > 0.0) ?  pow(NdotH, mShine) : 0.0;
 
+#if hasShadow
+    vec4 shadowCoord = shadowProj[i] / shadowProj[i].w;
+		
+    shadowCoord.z = DepthRangeA(ConvertDepth3A(shadowCoord.z,lDepth[i].x,lDepth[i].y),lDepth[i].x,lDepth[i].y);
+		
+		vec4 shadowSample = texture2D(lDepthTex[0],shadowCoord.st);
+		float distanceFromLight = unpackFloatFromVec4i(shadowSample);
+		
+	 	float shadow = 1.0;
+	 	
+    if (shadowProj[i].w > 0.0 && shadowCoord.s>=0.0 && shadowCoord.s<=1.0 && shadowCoord.t >= 0.0 && shadowCoord.t <= 1.0) {
+      shadow = distanceFromLight < shadowCoord.z ? 0.0 : 1.0 ;
+    }
+	 		
+     att = att * shadow;
+#endif
+
 		accum += att * lights[i].lDiff * mDiff * NdotL;		
     
     #if hasSpecularMap
@@ -268,11 +323,20 @@ vec3 accum = lAmb;
     #endif
 
     specTotal += spec2;
+
   }  
+  
   
   color.rgb *= accum;
   color.rgb += specTotal;
+
+  #if hasShadow
+  //  color = texture2D(lDepthTex[0], vec2(texCoord.s, texCoord.t)).rgba;
+
+  #endif
 #endif
+
+
 
 
 #if hasReflectMap
@@ -320,14 +384,21 @@ vec3 accum = lAmb;
 #endif
 #endif
 
-
 #if alphaDepth
 #if !hasAlpha
-  float linear_depth = DepthRange( ConvertDepth3( gl_FragCoord.z ));
+  float linear_depth = DepthRange( ConvertDepth3(gl_FragCoord.z) );
 
   color.a = linear_depth;
 #endif
 #endif
 
-	gl_FragColor = clamp(color,0.0,1.0);
+
+gl_FragColor = clamp(color,0.0,1.0);
+
+#endif // !depthPack
+
+#if depthPack
+  gl_FragColor = packFloatToVec4i(DepthRange( ConvertDepth3(gl_FragCoord.z)));
+#endif
+
 }

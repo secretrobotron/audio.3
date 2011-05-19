@@ -264,34 +264,23 @@
         planeObject.motion.setBehavior(CubicVR.enums.motion.ROT, 1, CubicVR.enums.envelope.behavior.CONSTANT, CubicVR.enums.envelope.behavior.OFFSET);
         */
 
-        // var dirLight = new CubicVR.Light({
-        //   type: CubicVR.enums.light.type.DIRECTIONAL,
-        //   specular: [0.4,0.4,0.4],
-        //   direction: CubicVR.vec3.normalize([0.5,-1,0.5])
-        // });
-        // scene.bindLight(dirLight);
-
-        // var pLight = new CubicVR.Light({
-        //   type: CubicVR.enums.light.type.POINT,
-        //   specular: [0.4, 0.4, 0.4],
-        //   intensity: 1,
-        //   distance: 20,
-        //   position: [0, 1.5, 0],
-        // });
-        // scene.bindLight(pLight);
-
         var spotLight = new CubicVR.Light({
-          type: CubicVR.enums.light.type.SPOT,
+          type: CubicVR.enums.light.type.SPOT_SHADOW,
           specular: [0.4,0.4,0.4],
           diffuse: [1,1,1],
-          intensity: 5,
-          distance: 20,
-          cutoff: 25,
-          position: [7,10,-5]
+          intensity: 6,
+          distance: 100,
+          cutoff: 50,
+          map_res: 2048,
+          position: [-7,10,-5]
         });
+
+        
+        // CubicVR.GLCore.shadow_near = 0.1;
+        // CubicVR.GLCore.shadow_far = 50.0;
         
         scene.bindLight(spotLight);
-        
+      
         
         var bf3d = new bitFont3D("box");
         
@@ -308,11 +297,21 @@
             letters.push(newfontObj);
             scene.bindSceneObject(newfontObj);
         },true);
+        
+        var layout = new CubicVR.Layout({width:canvas.width, height:canvas.height});
+        var depthView = new CubicVR.View({x:canvas.width-512,width:512,height:512,texture:spotLight.shadowMapTex.texture});
+        layout.addSubview(depthView);
 
         CubicVR.MainLoop(function(timer, gl) {
           var seconds = timer.getSeconds();
 
-          spotLight.lookAt([5.0*Math.sin(seconds),0,5.0*Math.sin(seconds)]);
+//          spotLight.position = [7.0*Math.sin(seconds),10,7.0*-Math.sin(seconds)];
+          spotLight.position[0] = 7.0*Math.sin(seconds/2.0);
+          spotLight.lookat([0,0,0]);
+//          spotLight.lookAt([5.0*Math.sin(seconds),0,5.0*Math.sin(seconds)]);
+       
+//          spotLight.lookAt([0,0,0]);
+          scene.updateShadows();
           
           fxChain.begin();
 
@@ -326,13 +325,14 @@
 
           fxChain.render();
           
+//          layout.render();
           
           
           scene.evaluate(timer.getSeconds());
           logoObject.rotation[1] = Math.sin(seconds)*180 + Math.sin(seconds/2)*540 + Math.sin(seconds/8)*1080;
           floorTextureColor.update();
-          floorTextureBump.update();
-          floorTextureNormal.update();
+          // floorTextureBump.update();
+          // floorTextureNormal.update();
           // pLight.position[0] = Math.sin(seconds/10)*10;
           // pLight.position[2] = Math.cos(seconds/10)*10;
           scene.camera.position[0] = 2 * Math.sin(seconds/5) + Math.cos(seconds/2) * 1.5;
