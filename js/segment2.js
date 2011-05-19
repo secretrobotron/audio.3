@@ -91,10 +91,10 @@ SegmentList.addSegment(function () {
       makeWireBoxObject(boxObject,7,boxMesh);
       makeWireBoxObject(boxObject,3,boxMesh);
 
-      animkit.transition(START_TIME+0, 10, 2, boxObject, "spiral");
+      animkit.transition(START_TIME+0, 10, 2, boxObject, "spiral2");
       animkit.transition(START_TIME+15, 40, 2, boxObject, "explode","out");
       animkit.transition(START_TIME+20, 10, 2, boxObject, "random");
-      animkit.transition(START_TIME+28, 50, 2, boxObject, "spiral","out");
+      animkit.transition(START_TIME+28, 50, 2, boxObject, "spiral2","out");
       animkit.transition(START_TIME+48, 40, 2, boxObject, "explode");
 
       spotLight = new CubicVR.Light({

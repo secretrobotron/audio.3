@@ -228,6 +228,8 @@
           basePlayer.currentTime = seconds;
           basePlayer.dispatchEvent('timeupdate');
 
+          scene.evaluate(seconds);
+
           scene.updateShadows();
 
           fxChain.begin();
@@ -237,7 +239,6 @@
           fxChain.end();
           fxChain.render();
 
-          scene.evaluate(seconds);
 
           //logoObject.rotation[1] = Math.sin(seconds)*180 + Math.sin(seconds/2)*540 + Math.sin(seconds/8)*1080;
           //pLight.position[0] = Math.sin(seconds/10)*10;
