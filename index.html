@@ -29,6 +29,7 @@
 		<script>
       var shaderList = [];
       var fxChain;
+      var shaders = {};
 
 			document.addEventListener('DOMContentLoaded', function (e) {
         var canvas = document.createElement('canvas');
@@ -46,6 +47,7 @@
           shader_vertex: "lib/cubicvr/post_shaders/fx_general.vs",
           shader_fragment: "lib/cubicvr/post_shaders/alpha_depth.fs",
         });
+        shaders['depth'] = shaderDepth;
 
 
         // simple color invert
@@ -53,6 +55,7 @@
           shader_vertex: "lib/cubicvr/post_shaders/fx_general.vs",
           shader_fragment: "lib/cubicvr/post_shaders/invert.fs"
         });
+        shaders['invert'] = shaderInvert;
 
         var shaderDOF6 = new CubicVR.PostProcessShader({
           shader_vertex: "lib/cubicvr/post_shaders/fx_general.vs",
@@ -69,12 +72,13 @@
             shader.setFloat("far_depth", (d + 4 - scene.camera.nearclip) / scene.camera.farclip);
           }
         });
-
+        shaders['dof'] = shaderDOF6;
 
         var shaderSSAO = new CubicVR.PostProcessShader({
           shader_vertex: "lib/cubicvr/post_shaders/fx_general.vs",
           shader_fragment: "lib/cubicvr/post_shaders/ssao.fs",
         });
+        shaders['ssao'] = shaderSSAO;
 
 
         // Bloom + 1/2 divisor + blend
@@ -84,6 +88,7 @@
           outputMode: CubicVR.enums.post.output.ADD,
           outputDivisor: 2
         });
+        shaders['halfbloom'] = shaderHalfBloom;
 
 
         // Bloom + 1/4 divisor + blend
@@ -93,6 +98,7 @@
             outputMode: CubicVR.enums.post.output.ADD,
             outputDivisor: 4
         });
+        shaders['quarterbloom'] = shaderQuarterBloom;
 
         var i = 0;
         var shaderActive = 0;
@@ -223,6 +229,8 @@
 
           basePlayer.currentTime = seconds;
           basePlayer.dispatchEvent('timeupdate');
+
+          //scene.updateShadows();
 
           fxChain.begin();
           gl.clearColor(0.0, 0.0, 0.0, 1.0);

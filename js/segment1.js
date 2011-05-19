@@ -45,10 +45,10 @@ SegmentList.addSegment(function () {
       var ring = soundFloorRings[i];
       var v = ring.material.color[0];
       if (floorShapeMode === 0) {
-        var newY = ring.baseY + fft.spectrum[2*(i)] * 30;
+        var newY = ring.baseY + fft.spectrum[2*(i)] * 40;
         if (ring.targetY < newY) {
           ring.targetY = newY;
-          v = fft.spectrum[2*i] * 10;
+          v = fft.spectrum[2*i] * 50;
         } //if
         ring.targetY = Math.max(ring.targetY - 0.1, ring.baseY);
       } //if
@@ -56,14 +56,14 @@ SegmentList.addSegment(function () {
         v = Math.min(0.5, v-0.05);
       }
       else if (floorColorMode === 1) {
-        v = Math.max(0.2, v-0.05);
+        v = Math.max(0.5, v-0.05);
       }
       else if (floorColorMode === 2) {
-        v = 0.8;
+        v = 1.0;
       } //if
 
       ring.position[1] -= (ring.position[1] - ring.targetY)*.25;
-      ring.material.color = [Math.min(1, v*(Math.sin(seconds)*.5 + 1)*.5), Math.min(1, v*(Math.sin(seconds-1)*.5 + 1)*.5), Math.min(1, v*(Math.sin(seconds-2)*.5 + 1)*.5)];
+      ring.material.color = [Math.min(1, v*(Math.sin(seconds)*.5 + 1)*.9), Math.min(1, v*(Math.sin(seconds-1)*.5 + 1)*.9), Math.min(1, v*(Math.sin(seconds-2)*.5 + 1)*.9)];
       if (floorShapeMode === 0) {
         ring.rotation[1] = Math.sin(seconds + (SOUND_FLOOR_RINGS-i)*0.1)*120;
       }
@@ -81,6 +81,8 @@ SegmentList.addSegment(function () {
 
   var dateTextObjects = [];
 
+  var spotLight;
+
   return new Segment({
     prepare: function (options) {
 
@@ -88,6 +90,19 @@ SegmentList.addSegment(function () {
       popcorn = options.popcorn;
       scene = options.scene;
       animKit = new AnimationKit();
+
+      spotLight = new CubicVR.Light({
+        type: CubicVR.enums.light.type.SPOT_SHADOW,
+        specular: [0.4,0.4,0.4],
+        diffuse: [1,1,1],
+        intensity: 6,
+        distance: 100,
+        cutoff: 50,
+        map_res: 2048,
+        position: [-7,10,-5]
+      });
+
+      //scene.bindLight(spotLight);
 
       dateTextObjects[0] = new CubicVR.SceneObject(CubicVR.primitives.plane({
         size: 8.0,
@@ -380,6 +395,9 @@ SegmentList.addSegment(function () {
 
     },
     load: function () {
+      shaders['quarterbloom'].enabled = true;
+      shaders['dof'].enabled = true;
+      shaders['ssao'].enabled = true;
       scene.bindSceneObject(soundFloorRingParent);
     },
     unload: function () {
@@ -389,6 +407,10 @@ SegmentList.addSegment(function () {
       audioBuffer = audioEngine.audioBuffer;
       fft = audioEngine.fft;
       currentSeconds = timer.getSeconds();
+
+      spotLight.position[0] = 7.0*Math.sin(currentSeconds/2.0);
+      spotLight.lookat([0,0,0]);
+
       if (audioBuffer) {
         updateSoundFloor(currentSeconds);
       } //if
@@ -402,6 +424,7 @@ SegmentList.addSegment(function () {
         scene.camera.position[2] = (scene.camera.position[2] + 4)*.85;
         scene.camera.setFOV(scene.camera.fov - (scene.camera.fov - targetFOV)*.15);
       } //if
+
     },
   });
 }());
