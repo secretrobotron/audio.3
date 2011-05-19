@@ -294,19 +294,6 @@ SegmentList.addSegment(function () {
           scene.bindSceneObject(dateTextObjects[0]);
           scene.bindSceneObject(dateTextObjects[1]);
 
-          var spotLight = new CubicVR.Light({
-            type: CubicVR.enums.light.type.SPOT,
-            specular: [0.4,0.4,0.4],
-            diffuse: [1,1,1],
-            intensity: 5,
-            distance: 20,
-            cutoff: 25,
-            position: [7,10,-5]
-          });
-        
-          scene.bindLight(spotLight);
-          spotLight.lookat([5.0*Math.sin(currentSeconds),0,5.0*Math.sin(currentSeconds)]);
- 
         },
         onEnd: function (options) {
           targetFOV = 65;
@@ -314,7 +301,7 @@ SegmentList.addSegment(function () {
       });
 
       function curveLetters(bfStr) {
-        var tilt = 120/bfStr.children.length;
+        var tilt = 70/bfStr.children.length;
         for (var i=0; i<bfStr.children.length; ++i) {
           var letter = bfStr.children[i];
           var xofs = letter.position[0];
