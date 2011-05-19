@@ -100,17 +100,8 @@ SegmentList.addSegment(function () {
         bf3d.genString('Present:'),
       ];
 
-      popcorn.code({
-        start: START_TIME+20.5,
-        end: START_TIME+21,
-        onStart: function (options) {
-          cameraMode = 1;
-          cameraPosition = [0, 2, 6];
-        },
-      });
-
-      for (var i=0; i<words.length; ++i) {
-        (function (bfStr) {
+      for (var j=0; j<words.length; ++j) {
+        (function (bfStr, i) {
           popcorn.code({
             start: START_TIME+21+i/2,
             end: START_TIME+43+i/2,
@@ -131,13 +122,88 @@ SegmentList.addSegment(function () {
           });
 
           popcorn.code({
-            start: START_TIME+24+i,
+            start: START_TIME+27+i*2,
+            end: START_TIME+27.5+i*2,
             onStart: function (options) {
               cameraTarget = bfStr.position;
+              cameraPosition = [bfStr.position[0]+2, bfStr.position[1]-1.3, bfStr.position[2]+2.5];
             },
           });
-        })(words[i]);
+        })(words[j], j);
       } //for
+
+      popcorn.code({
+        start: START_TIME+25.5,
+        end: START_TIME+26,
+        onStart: function (options) {
+          cameraMode = 1;
+          cameraPosition = [4, 2, 5];
+        },
+      });
+
+      popcorn.code({
+        start: START_TIME+35,
+        end: START_TIME+50,
+        onStart: function (options) {
+          cameraPosition = [2, 5, -9];
+          cameraTarget = [0, 3, 8];
+          var bfStrs = [
+            bf3d.genString('Demo Art'),
+            bf3d.genString('on the'),
+            bf3d.genString('Open Web platform'),
+          ];
+
+          bfStrs[0].scale = [5, 5, 5];
+          bfStrs[0].position = [-5, 5.5, 9];
+          bfStrs[0].rotation[1] = 170;
+          bfStrs[1].scale = [1, 1, 1];
+          bfStrs[1].position = [0, 0, 10];
+          bfStrs[1].rotation[1] = 180;
+          bfStrs[2].scale = [4, 4, 4];
+          bfStrs[2].position = [-4, -4.5, 9.5];
+          bfStrs[2].rotation[1] = 190;
+
+          var bfStr = bfStrs[0];
+          var mot = bfStr.motion = new CubicVR.Motion();
+          mot.setKey(CubicVR.enums.motion.POS, CubicVR.enums.motion.X, START_TIME+35, bfStr.position[0]);
+          mot.setKey(CubicVR.enums.motion.POS, CubicVR.enums.motion.X, START_TIME+50, bfStr.position[0]+1);
+          mot.setBehavior(CubicVR.enums.motion.POS, CubicVR.enums.motion.X, CubicVR.enums.envelope.behavior.CONSTANT, CubicVR.enums.envelope.behavior.CONSTANT);
+          bfStr = bfStrs[1];
+          mot = bfStr.motion = new CubicVR.Motion();
+          mot.setKey(CubicVR.enums.motion.POS, CubicVR.enums.motion.Y, START_TIME+35, bfStr.position[1]);
+          mot.setKey(CubicVR.enums.motion.POS, CubicVR.enums.motion.Y, START_TIME+50, bfStr.position[1]-1);
+          mot.setBehavior(CubicVR.enums.motion.POS, CubicVR.enums.motion.Y, CubicVR.enums.envelope.behavior.CONSTANT, CubicVR.enums.envelope.behavior.CONSTANT);
+          bfStr = bfStrs[2];
+          mot = bfStr.motion = new CubicVR.Motion();
+          mot.setKey(CubicVR.enums.motion.POS, CubicVR.enums.motion.Z, START_TIME+35, bfStr.position[2]);
+          mot.setKey(CubicVR.enums.motion.POS, CubicVR.enums.motion.Z, START_TIME+50, bfStr.position[2]+1);
+          mot.setBehavior(CubicVR.enums.motion.POS, CubicVR.enums.motion.Z, CubicVR.enums.envelope.behavior.CONSTANT, CubicVR.enums.envelope.behavior.CONSTANT);
+
+          scene.bindSceneObject(bfStrs[0]);
+          scene.bindSceneObject(bfStrs[1]);
+          scene.bindSceneObject(bfStrs[2]);
+
+          animkit.transition(START_TIME+47, 40, 3, bfStrs[0], "explode", "out");
+          animkit.transition(START_TIME+47, 40, 3, bfStrs[1], "explode", "out");
+          animkit.transition(START_TIME+47, 40, 3, bfStrs[2], "explode", "out");
+
+          options.bfStrs = bfStrs;
+        },
+        onEnd: function (options) {
+          scene.removeSceneObject(options.bfStrs[0]);
+          scene.removeSceneObject(options.bfStrs[1]);
+          scene.removeSceneObject(options.bfStrs[2]);
+        },
+      });
+
+      popcorn.code({
+        start: START_TIME+50,
+        end: START_TIME+51,
+        onStart: function (options) {
+          cameraTarget = [0, 0, 0];
+          cameraPosition = [10, 10, 10];
+        },
+      });
       
     },
     load: function () {
@@ -153,12 +219,12 @@ SegmentList.addSegment(function () {
         scene.camera.position[2] = 5 * Math.cos(seconds / 5) + Math.cos(seconds / 2) * 3.5;
       }
       else if (cameraMode === 1) {
-        scene.camera.target[0] = (scene.camera.target[0] - cameraTarget[0]) *.85;
-        scene.camera.target[1] = (scene.camera.target[1] - cameraTarget[1]) *.85;
-        scene.camera.target[2] = (scene.camera.target[2] - cameraTarget[2]) *.85;
-        scene.camera.position[0] = (scene.camera.position[0] - cameraPosition[0]) *.85;
-        scene.camera.position[1] = (scene.camera.position[1] - cameraPosition[1]) *.85;
-        scene.camera.position[2] = (scene.camera.position[2] - cameraPosition[2]) *.85;
+        scene.camera.target[0] -= (scene.camera.target[0] - cameraTarget[0]) *.35;
+        scene.camera.target[1] -= (scene.camera.target[1] - cameraTarget[1]) *.35;
+        scene.camera.target[2] -= (scene.camera.target[2] - cameraTarget[2]) *.35;
+        scene.camera.position[0] -= (scene.camera.position[0] - cameraPosition[0]) *.35;
+        scene.camera.position[1] -= (scene.camera.position[1] - cameraPosition[1]) *.35;
+        scene.camera.position[2] -= (scene.camera.position[2] - cameraPosition[2]) *.35;
       } //if
     },
   });
