@@ -81,7 +81,7 @@ SegmentList.addSegment(function () {
 
   var dateTextObjects = [];
 
-  var spotLight;
+  var spotLights = [];
 
   return new Segment({
     prepare: function (options) {
@@ -91,18 +91,38 @@ SegmentList.addSegment(function () {
       scene = options.scene;
       animKit = new AnimationKit();
 
+      var spotLight;
+
       spotLight = new CubicVR.Light({
         type: CubicVR.enums.light.type.SPOT_SHADOW,
         specular: [0.4,0.4,0.4],
         diffuse: [1,1,1],
-        intensity: 6,
+        intensity: 1,
         distance: 100,
         cutoff: 50,
         map_res: 2048,
         position: [-7,10,-5]
       });
 
-      //scene.bindLight(spotLight);
+      spotLight.lookat([0,0,0]);
+      scene.bindLight(spotLight);
+      spotLights.push(spotLight);
+
+      spotLight = new CubicVR.Light({
+        type: CubicVR.enums.light.type.SPOT_SHADOW,
+        specular: [0.4,0.4,0.4],
+        diffuse: [1,1,1],
+        intensity: 2,
+        distance: 100,
+        cutoff: 300,
+        map_res: 2048,
+        position: [-2, 4.5, -4],
+      });
+
+      spotLight.lookat([-2, 3, -4]);
+      scene.bindLight(spotLight);
+      spotLights.push(spotLight);
+
 
       dateTextObjects[0] = new CubicVR.SceneObject(CubicVR.primitives.plane({
         size: 8.0,
@@ -288,6 +308,15 @@ SegmentList.addSegment(function () {
           floorShapeMode = 1;
           floorColorMode = 2;
 
+          spotLights[0].position = [2, 2, 35];
+          spotLights[1].position = [-1, 10, 35];
+          spotLights[0].lookat([1, 0, 0]);
+          spotLights[1].lookat([0, 0, 0]);
+          spotLights[0].cutoff = 400;
+          spotLights[1].cutoff = 400;
+          spotLights[0].intensity = .3;
+          spotLights[1].intensity = .3;
+
           dateTextObjects[0].scale = [50, 40, 1];
           dateTextObjects[0].rotation[1] = 180;
           dateTextObjects[0].position = [-15, -2, -10];
@@ -408,8 +437,7 @@ SegmentList.addSegment(function () {
       fft = audioEngine.fft;
       currentSeconds = timer.getSeconds();
 
-      spotLight.position[0] = 7.0*Math.sin(currentSeconds/2.0);
-      spotLight.lookat([0,0,0]);
+      //spotLight.position[0] = 7.0*Math.sin(currentSeconds/2.0);
 
       if (audioBuffer) {
         updateSoundFloor(currentSeconds);
@@ -419,9 +447,9 @@ SegmentList.addSegment(function () {
         scene.camera.position[2] = 3 + Math.sin(currentSeconds/5) + Math.cos(currentSeconds/2) * 1.5;
       }
       else if (floorShapeMode === 1) {
-        scene.camera.position[0] = (scene.camera.position[0] - 0)*.85;
-        scene.camera.position[1] = (scene.camera.position[1] + 0)*.85;
-        scene.camera.position[2] = (scene.camera.position[2] + 4)*.85;
+        scene.camera.position[0] -= (scene.camera.position[0] - 0)*.85;
+        scene.camera.position[1] -= (scene.camera.position[1] - 0)*.85;
+        scene.camera.position[2] -= (scene.camera.position[2] - 22)*.85;
         scene.camera.setFOV(scene.camera.fov - (scene.camera.fov - targetFOV)*.15);
       } //if
 
