@@ -425,7 +425,7 @@ SegmentList.addSegment(function () {
     },
     load: function () {
       shaders['quarterbloom'].enabled = true;
-      shaders['dof'].enabled = true;
+      shaders['dof'].enabled = false;
       shaders['ssao'].enabled = true;
       scene.bindSceneObject(soundFloorRingParent);
     },
