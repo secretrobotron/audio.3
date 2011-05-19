@@ -200,25 +200,6 @@
         });
         scene.bindLight(pLight);
 
-        var bfMaterial = new CubicVR.Material({
-          color: [0.3,0.4,0.9],
-          specular: [1,1,1],
-          shininess: 0.9,
-          textures: {
-            envsphere: new CubicVR.Texture("img/fract_reflections.jpg")
-          }
-        });
-        
-        var bfUV = new CubicVR.UVMapper({
-          projectionMode: CubicVR.enums.uv.projection.CUBIC,
-          scale: [1, 1, 1]
-        });
-
-        var bf3d = new bitFont3D("box", bfMaterial, bfUV);
-        bf3d.loadFont();
-
-        var animKit = new AnimationKit();
-
         for (var i=0, s=SegmentList.segments, l=s.length; i<l; ++i) {
           var startTime = s[i].startTime;
           popcorn.code({
@@ -232,9 +213,7 @@
         SegmentList.prepareSegments({
           popcorn: popcorn,
           audioEngine: audioEngine,
-          bf3d: bf3d,
           scene: scene,
-          animKit: animKit,
         });
 
         CubicVR.MainLoop(function(timer, gl) {

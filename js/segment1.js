@@ -4,6 +4,7 @@ SegmentList.addSegment(function () {
   var audioBuffer, fft;
   var popcorn;
   var scene, animKit, bf3d;
+  var targetFOV = 80;
 
   function makeCylinderLathe(mesh, height, inner_radius, outer_radius, res, material, uvmapper) {
     var pointList = new Array();
@@ -76,14 +77,62 @@ SegmentList.addSegment(function () {
     } //if
   }; //updateSoundFloor
 
+  var bfMaterial;
+
+  var dateTextObjects = [];
+
   return new Segment({
     prepare: function (options) {
 
       audioEngine = options.audioEngine;
       popcorn = options.popcorn;
       scene = options.scene;
-      bf3d = options.bf3d;
-      animKit = options.animKit;
+      animKit = new AnimationKit();
+
+      dateTextObjects[0] = new CubicVR.SceneObject(CubicVR.primitives.plane({
+        size: 8.0,
+        material: new CubicVR.Material({
+          textures: {
+            color: new CubicVR.TextTexture('June', {font:'200pt Arial'}),
+          }
+        }),
+        uvmapper: {
+          projectionMode: CubicVR.enums.uv.projection.PLANAR,
+          projectionAxis: CubicVR.enums.uv.axis.Z,
+          scale: [1.2, 1.2, 1.2],
+        },
+      }).triangulateQuads().compile().clean());
+
+      dateTextObjects[1] = new CubicVR.SceneObject(CubicVR.primitives.plane({
+        size: 8.0,
+        material: new CubicVR.Material({
+          textures: {
+            color: new CubicVR.TextTexture('18', {font:'200pt Arial'}),
+          }
+        }),
+        uvmapper: {
+          projectionMode: CubicVR.enums.uv.projection.PLANAR,
+          projectionAxis: CubicVR.enums.uv.axis.Z,
+          scale: [1.2, 1.2, 1.2],
+        },
+      }).triangulateQuads().compile().clean());
+
+      bfMaterial = new CubicVR.Material({
+        color: [0.8,0.3,0.2],
+        specular: [1, 5, 0],
+        shininess: 0.9,
+        textures: {
+          envsphere: new CubicVR.Texture("img/fract_reflections.jpg")
+        }
+      });
+        
+      var bfUV = new CubicVR.UVMapper({
+        projectionMode: CubicVR.enums.uv.projection.CUBIC,
+        scale: [1, 1, 1]
+      });
+
+      bf3d = new bitFont3D("box", bfMaterial, bfUV);
+      bf3d.loadFont();
 
       floorBumpTexture = new CubicVR.CanvasTexture({
         update: function (canvas, ctx) {
@@ -158,6 +207,46 @@ SegmentList.addSegment(function () {
           scene.bindSceneObject(bfStr);
         },
         onEnd: function (options) {
+          animKit.transition(currentSeconds, 20, 3, options.bfStr, 'random', 'out');
+          setTimeout(function(){
+            scene.removeSceneObject(options.bfStr);
+          }, 3000);
+        },
+      });
+
+      popcorn.code({
+        start: 15,
+        end: 25,
+        onStart: function (options) {
+          var bfStr = bf3d.genString("Helsinki");
+          animKit.transition(currentSeconds, 5, 3, bfStr, 'explode', 'in');
+          options.bfStr = bfStr;
+          bfStr.scale = [3, 3, 3];
+          bfStr.position = [6, 2.8, -8];
+          bfStr.rotation[1] = -45;
+          scene.bindSceneObject(bfStr);
+        },
+        onEnd: function (options) {
+          animKit.transition(currentSeconds, 20, 3, options.bfStr, 'random', 'out');
+          setTimeout(function(){
+            scene.removeSceneObject(options.bfStr);
+          }, 3000);
+        },
+      });
+
+      popcorn.code({
+        start: 18,
+        end: 28,
+        onStart: function (options) {
+          var bfStr = bf3d.genString("Finland");
+          animKit.transition(currentSeconds, 5, 3, bfStr, 'explode', 'in');
+          options.bfStr = bfStr;
+          bfStr.scale = [3, 3, 3];
+          bfStr.position = [-5, 3.8, -7];
+          bfStr.rotation[1] = 45;
+          scene.bindSceneObject(bfStr);
+        },
+        onEnd: function (options) {
           animKit.transition(currentSeconds, 20, 3, options.bfStr, 'explode', 'out');
           setTimeout(function(){
             scene.removeSceneObject(options.bfStr);
@@ -175,7 +264,7 @@ SegmentList.addSegment(function () {
 
       popcorn.code({
         start: 28,
-        end: 29,
+        end: 36,
         onStart: function (options) {
           for (var i=0; i<soundFloorRings.length; ++i) {
             var ring = soundFloorRings[i];
@@ -183,9 +272,44 @@ SegmentList.addSegment(function () {
           } //for
           floorShapeMode = 1;
           floorColorMode = 2;
-          scene.camera.position[1] = 2;
+
+          dateTextObjects[0].scale = [50, 40, 1];
+          dateTextObjects[0].rotation[1] = 180;
+          dateTextObjects[0].position = [-15, -2, -10];
+
+          dateTextObjects[1].scale = [80, 100, 1];
+          dateTextObjects[1].rotation[1] = 180;
+          dateTextObjects[1].position = [30, -12, -15];
+
+          var mot = dateTextObjects[1].motion = new CubicVR.Motion();
+          mot.setKey(CubicVR.enums.motion.POS, CubicVR.enums.motion.Y, currentSeconds, dateTextObjects[0].position[1]).tension=1;
+          mot.setKey(CubicVR.enums.motion.POS, CubicVR.enums.motion.Y, currentSeconds+25, dateTextObjects[0].position[1]-60).tension=1;
+          mot.setKey(CubicVR.enums.motion.POS, CubicVR.enums.motion.Y, currentSeconds+26, dateTextObjects[0].position[1]-420).tension=1;
+
+          var mot = dateTextObjects[0].motion = new CubicVR.Motion();
+          mot.setKey(CubicVR.enums.motion.POS, CubicVR.enums.motion.X, currentSeconds, dateTextObjects[1].position[2]).tension=1;
+          mot.setKey(CubicVR.enums.motion.POS, CubicVR.enums.motion.X, currentSeconds+25, dateTextObjects[1].position[2]-60).tension=1;
+          mot.setKey(CubicVR.enums.motion.POS, CubicVR.enums.motion.X, currentSeconds+26, dateTextObjects[1].position[2]-420).tension=1;
+
+          scene.bindSceneObject(dateTextObjects[0]);
+          scene.bindSceneObject(dateTextObjects[1]);
+
+          var spotLight = new CubicVR.Light({
+            type: CubicVR.enums.light.type.SPOT,
+            specular: [0.4,0.4,0.4],
+            diffuse: [1,1,1],
+            intensity: 5,
+            distance: 20,
+            cutoff: 25,
+            position: [7,10,-5]
+          });
+        
+          scene.bindLight(spotLight);
+          spotLight.lookAt([5.0*Math.sin(currentSeconds),0,5.0*Math.sin(currentSeconds)]);
+ 
         },
         onEnd: function (options) {
+          targetFOV = 65;
         },
       });
 
@@ -217,60 +341,41 @@ SegmentList.addSegment(function () {
  
       }; //setupLettersMotion
 
-      popcorn.code({
-        start: 29,
-        end: 33,
-        onStart: function (options) {
-          var bfStr = bf3d.genString('starring');
-          curveLetters(bfStr);
-          options.bfStr = bfStr;
-          setupLettersMotion(bfStr, currentSeconds, currentSeconds+3);
-          bfStr.scale = [3, 3, 3];
-          scene.bindSceneObject(bfStr);
-        },
-        onEnd: function (options) {
-          scene.removeSceneObject(options.bfStr);
-        },
-      });
+      var words = [
+        [bf3d.genString('starring')],
+        [bf3d.genString('secret'),bf3d.genString('robotron')],
+        [bf3d.genString('ccliffe')],
+        [bf3d.genString('humph')],
+        [bf3d.genString('corban')],
+        [bf3d.genString('cubicvr')],
+        [bf3d.genString('popcorn')],
+      ];
 
-      popcorn.code({
-        start: 35,
-        end: 39,
-        onStart: function (options) {
-          var bfStr = [bf3d.genString('secret'), bf3d.genString('robotron')];
-          curveLetters(bfStr[0]);
-          curveLetters(bfStr[1]);
-          options.bfStr = bfStr;
-          setupLettersMotion(bfStr[0], currentSeconds, currentSeconds+3);
-          setupLettersMotion(bfStr[1], currentSeconds, currentSeconds+3, [0,-3,0]);
-          bfStr[0].scale = [3, 3, 3];
-          bfStr[1].scale = [3, 3, 3];
-          scene.bindSceneObject(bfStr[0]);
-          scene.bindSceneObject(bfStr[1]);
-        },
-        onEnd: function (options) {
-          scene.removeSceneObject(options.bfStr[0]);
-          scene.removeSceneObject(options.bfStr[1]);
-        },
-      });
+      for (var i=0; i<words.length; ++i) {
+        (function (bfStrs) {
+          popcorn.code({
+            start: 36+i*3,
+            end: 40+i*3,
+            onStart: function (options) {
+              for (var j=0; j<bfStrs.length; ++j) {
+                var bfStr = bfStrs[j];
+                curveLetters(bfStr);
+                options.bfStr = bfStr;
+                setupLettersMotion(bfStr, currentSeconds, currentSeconds+3, [0, -3*j, 0]);
+                bfStr.scale = [3, 3, 3];
+                scene.bindSceneObject(bfStr);
+              } //for
+            },
+            onEnd: function (options) {
+              for (var j=0; j<bfStrs.length; ++j) {
+                scene.removeSceneObject(bfStrs[j]);
+              } //for
+            },
+          });
+        })(words[i]);
+      } //for
 
-      popcorn.code({
-        start: 40,
-        end: 44,
-        onStart: function (options) {
-          var bfStr = bf3d.genString('ccliffe');
-          curveLetters(bfStr);
-          options.bfStr = bfStr;
-          setupLettersMotion(bfStr, currentSeconds, currentSeconds+3);
-          bfStr.scale = [3, 3, 3];
-          scene.bindSceneObject(bfStr);
-        },
-        onEnd: function (options) {
-          scene.removeSceneObject(options.bfStr);
-        },
-      });
-
-      var FINISH_FLOOR = 47;
+      var FINISH_FLOOR = 40 + words.length*3;
 
       var mot = soundFloorRingParent.motion = new CubicVR.Motion();
       mot.setKey(CubicVR.enums.motion.POS, CubicVR.enums.motion.Y, FINISH_FLOOR, 0);
@@ -306,7 +411,9 @@ SegmentList.addSegment(function () {
       }
       else if (floorShapeMode === 1) {
         scene.camera.position[0] = (scene.camera.position[0] - 0)*.85;
+        scene.camera.position[1] = (scene.camera.position[1] + 0)*.85;
         scene.camera.position[2] = (scene.camera.position[2] + 4)*.85;
+        scene.camera.setFOV(scene.camera.fov - (scene.camera.fov - targetFOV)*.15);
       } //if
     },
   });
