@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
+    <base target="_blank">
     <style type="text/css">
       body {
         width: 100%;
@@ -180,47 +181,12 @@
         fft = new FFT(4096, 44100);
         audioEngine.fft = fft;
 
-        var logoMaterial = new CubicVR.Material({
-          textures: {
-            color: new CubicVR.Texture("img/logo.jpg"),
-            alpha: new CubicVR.Texture("img/logo-alpha.jpg"),
-          },
-        });
-
-        var logoMesh = CubicVR.primitives.plane({
-          size: 1.0,
-          material: logoMaterial,
-          uvmapper: {
-            projectionMode: CubicVR.enums.uv.projection.PLANAR,
-            projectionAxis: CubicVR.enums.uv.axis.Z,
-            scale: [1, 1, 1]
-          }
-        });
-
-        logoMesh.triangulateQuads().compile().clean();
-
         scene = new CubicVR.Scene(canvas.width, canvas.height, 80);
-
-        var logoObject = new CubicVR.SceneObject(logoMesh);
-
-        // bind this last because of depth buffer quirks
-        //scene.bindSceneObject(logoObject);
 
         scene.camera.position = [0, 0.5, 2];
         scene.camera.target = [0, 0, 0];
         CubicVR.setGlobalDepthAlpha(true, scene.camera.nearclip, scene.camera.farclip);
        
-        /*
-        var pLight = new CubicVR.Light({
-          type: CubicVR.enums.light.type.POINT,
-          specular: [1, 1, 1],
-          intensity: .8,
-          distance: 20,
-          position: [0, 1.5, 0],
-        });
-        scene.bindLight(pLight);
-        */
-
         for (var i=0, s=SegmentList.segments, l=s.length; i<l; ++i) {
           var startTime = s[i].startTime;
           popcorn.code({
@@ -231,10 +197,12 @@
             },
           });
         } //for      
+
         SegmentList.prepareSegments({
           popcorn: popcorn,
           audioEngine: audioEngine,
           scene: scene,
+          canvas: canvas,
         });
 
         CubicVR.MainLoop(function(timer, gl) {
@@ -255,11 +223,6 @@
           scene.render();
           fxChain.end();
           fxChain.render();
-
-
-          //logoObject.rotation[1] = Math.sin(seconds)*180 + Math.sin(seconds/2)*540 + Math.sin(seconds/8)*1080;
-          //pLight.position[0] = Math.sin(seconds/10)*10;
-          //pLight.position[2] = Math.cos(seconds/10)*10;
         });
 
         document.body.appendChild(canvas);
