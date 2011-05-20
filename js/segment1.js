@@ -366,13 +366,13 @@ SegmentList.addSegment(function () {
       }; //setupLettersMotion
 
       var words = [
-        [bf3d.genString('starring')],
-        [bf3d.genString('secret'),bf3d.genString('robotron')],
-        [bf3d.genString('ccliffe')],
-        [bf3d.genString('humph')],
-        [bf3d.genString('corban')],
-        [bf3d.genString('cubicvr')],
-        [bf3d.genString('popcorn')],
+        [bf3d.genString(' starring')],
+        [bf3d.genString(' secret'),bf3d.genString(' robotron')],
+        [bf3d.genString(' ccliffe')],
+        [bf3d.genString(' humph')],
+        [bf3d.genString(' corban')],
+        [bf3d.genString(' cubicvr')],
+        [bf3d.genString(' popcorn')],
       ];
 
       for (var i=0; i<words.length; ++i) {
