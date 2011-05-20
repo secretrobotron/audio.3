@@ -1,8 +1,24 @@
 SegmentList.addSegment(function () {
 
   var audioEngine, audioBuffer, fft, popcorn;
-  var scene, animKit, bf3d, bfMaterial, targetFOV = 80;
+  var scene, animKit, bf3d, bfMaterial, targetFOV = 80, cameraTarget;
   var dateTextObjects = [], dirLight, spotLights = [];
+  var currentSeconds;
+
+  function moveCameraTarget(startTime, duration, destination) {
+    var mot = cameraTarget.motion;
+    var p = cameraTarget.position;
+    var d = destination;
+    mot.setKey(CubicVR.enums.motion.POS, CubicVR.enums.motion.X, startTime, p[0]).tension = 1;
+    mot.setKey(CubicVR.enums.motion.POS, CubicVR.enums.motion.Y, startTime, p[1]).tension = 1;
+    mot.setKey(CubicVR.enums.motion.POS, CubicVR.enums.motion.Z, startTime, p[2]).tension = 1;
+    mot.setKey(CubicVR.enums.motion.POS, CubicVR.enums.motion.X, startTime+duration, d[0]).tension = 1;
+    mot.setKey(CubicVR.enums.motion.POS, CubicVR.enums.motion.Y, startTime+duration, d[1]).tension = 1;
+    mot.setKey(CubicVR.enums.motion.POS, CubicVR.enums.motion.Z, startTime+duration, d[2]).tension = 1;
+    mot.setBehavior(CubicVR.enums.motion.POS, CubicVR.enums.motion.X, CubicVR.enums.envelope.behavior.CONSTANT, CubicVR.enums.envelope.behavior.CONSTANT);
+    mot.setBehavior(CubicVR.enums.motion.POS, CubicVR.enums.motion.Y, CubicVR.enums.envelope.behavior.CONSTANT, CubicVR.enums.envelope.behavior.CONSTANT);
+    mot.setBehavior(CubicVR.enums.motion.POS, CubicVR.enums.motion.Z, CubicVR.enums.envelope.behavior.CONSTANT, CubicVR.enums.envelope.behavior.CONSTANT);
+  }; //moveCameraTarget
 
   function makeCylinderLathe(mesh, height, inner_radius, outer_radius, res, material, uvmapper) {
     var pointList = new Array();
@@ -26,7 +42,7 @@ SegmentList.addSegment(function () {
   };
   
   var SOUND_FLOOR_RINGS = 25,
-      SOUND_FLOOR_Y = -5,
+      SOUND_FLOOR_Y = -5.5,
       SOUND_FLOOR_H = 2.0,
       SOUND_FLOOR_SPACING = 0.35,
       MAX_WIDTH = 45;
@@ -35,8 +51,7 @@ SegmentList.addSegment(function () {
   var soundFloorRingParent = new CubicVR.SceneObject(new CubicVR.Mesh());
 
   var floorBumpTexture, floorNormalTexture, floorMaterial,
-      floorShapeMode = 0, floorColorMode = 0,
-      currentSeconds;
+      floorShapeMode = 0, floorColorMode = 0;
 
   function updateSoundFloor(seconds) {
     for (var i=0; i<SOUND_FLOOR_RINGS; ++i) {
@@ -115,6 +130,11 @@ SegmentList.addSegment(function () {
       scene.bindLight(spotLight);
       spotLights.push(spotLight);
 
+      cameraTarget = new CubicVR.SceneObject(null);
+      cameraTarget.motion = new CubicVR.Motion();
+      cameraTarget.position = [0, 1, 0];
+
+      scene.bindSceneObject(cameraTarget);
 
       dateTextObjects[0] = new CubicVR.SceneObject(CubicVR.primitives.plane({
         size: 8.0,
@@ -201,25 +221,31 @@ SegmentList.addSegment(function () {
         var soundFloorObject = new CubicVR.SceneObject(soundFloorMesh);
         soundFloorRingParent.bindChild(soundFloorObject);
         soundFloorRings.push(soundFloorObject);
-        soundFloorObject.targetY = SOUND_FLOOR_Y + i/3;
-        soundFloorObject.baseY = SOUND_FLOOR_Y + i/3;
+        soundFloorObject.targetY = SOUND_FLOOR_Y + i/2.9;
+        soundFloorObject.baseY = SOUND_FLOOR_Y + i/2.9;
         soundFloorObject.rotation[1] = 3*i;
         soundFloorObject.material = floorMaterial;
       } //for
 
       popcorn.code({
         start: 1,
-        end: 13,
+        end: 11,
         onStart: function (options) {
-          var bfStr = bf3d.genString("#audio welcomes you");
-          animKit.transition(currentSeconds, 5, 3, bfStr, "spiral");
-          options.bfStr = bfStr;
-          scene.bindSceneObject(bfStr);
+          var bfStrs = [bf3d.genString('#audio'), bf3d.genString("welcomes you")];
+          bfStrs[0].scale = [1.5, 1.5, 1.5];
+          bfStrs[0].position[1] = 1.5;
+          animKit.transition(currentSeconds, 5, 3, bfStrs[0], "spiral2");
+          animKit.transition(currentSeconds, 5, 3, bfStrs[1], "spiral");
+          options.bfStrs = bfStrs;
+          scene.bindSceneObject(bfStrs[0]);
+          scene.bindSceneObject(bfStrs[1]);
         },
         onEnd: function (options) {
-          animKit.transition(currentSeconds, 20, 3, options.bfStr, 'explode', 'out');
+          animKit.transition(currentSeconds, 20, 3, options.bfStrs[0], 'explode', 'out');
+          animKit.transition(currentSeconds, 20, 3, options.bfStrs[1], 'explode', 'out');
           setTimeout(function(){
-            scene.removeSceneObject(options.bfStr);
+            scene.removeSceneObject(options.bfStrs[0]);
+            scene.removeSceneObject(options.bfStrs[1]);
           }, 3000);
         },
       });
@@ -228,15 +254,23 @@ SegmentList.addSegment(function () {
         start: 9,
         end: 24,
         onStart: function (options) {
-          var bfStr = bf3d.genString("to flameparty!!");
-          animKit.transition(currentSeconds, 5, 3, bfStr, "spiral");
-          options.bfStr = bfStr;
-          scene.bindSceneObject(bfStr);
+          var bfStrs = [bf3d.genString('to'), bf3d.genString("flameparty!!")];
+          bfStrs[0].scale = [0.6, 0.6, 0.6];
+          bfStrs[0].position[1] = 1.2;
+          bfStrs[1].position[1] = .2;
+          bfStrs[1].scale = [1, 1, 1];
+          animKit.transition(currentSeconds, 5, 3, bfStrs[0], "spiral");
+          animKit.transition(currentSeconds, 5, 3, bfStrs[1], "spiral2");
+          animKit.transition(currentSeconds+10, 200, 15, bfStrs[0], 'random', 'out');
+          options.bfStrs = bfStrs;
+          scene.bindSceneObject(bfStrs[0]);
+          scene.bindSceneObject(bfStrs[1]);
         },
         onEnd: function (options) {
-          animKit.transition(currentSeconds, 20, 3, options.bfStr, 'random', 'out');
+          animKit.transition(currentSeconds, 20, 3, options.bfStrs[1], 'random', 'out');
           setTimeout(function(){
-            scene.removeSceneObject(options.bfStr);
+            scene.removeSceneObject(options.bfStrs[0]);
+            scene.removeSceneObject(options.bfStrs[1]);
           }, 3000);
         },
       });
@@ -246,15 +280,16 @@ SegmentList.addSegment(function () {
         end: 25,
         onStart: function (options) {
           var bfStr = bf3d.genString("Helsinki");
-          animKit.transition(currentSeconds, 5, 3, bfStr, 'explode', 'in');
+          animKit.transition(currentSeconds, 20, 3, bfStr, 'explode', 'in');
           options.bfStr = bfStr;
           bfStr.scale = [3, 3, 3];
           bfStr.position = [6, 2.8, -8];
           bfStr.rotation[1] = -45;
           scene.bindSceneObject(bfStr);
+          moveCameraTarget(currentSeconds+1, 2, bfStr.position);
         },
         onEnd: function (options) {
-          animKit.transition(currentSeconds, 20, 3, options.bfStr, 'random', 'out');
+          animKit.transition(currentSeconds, 200, 3, options.bfStr, 'random', 'out');
           setTimeout(function(){
             scene.removeSceneObject(options.bfStr);
           }, 3000);
@@ -273,9 +308,11 @@ SegmentList.addSegment(function () {
           bfStr.rotation[1] = 45;
           scene.bindSceneObject(bfStr);
           spotLights[1].lookat(bfStr.position);
+          moveCameraTarget(currentSeconds+3, 2, bfStr.position);
         },
         onEnd: function (options) {
           animKit.transition(currentSeconds, 20, 3, options.bfStr, 'explode', 'out');
+          moveCameraTarget(currentSeconds, .25, [0,.2,0]);
           setTimeout(function(){
             scene.removeSceneObject(options.bfStr);
           }, 3000);
@@ -366,13 +403,13 @@ SegmentList.addSegment(function () {
       }; //setupLettersMotion
 
       var words = [
-        [bf3d.genString('starring')],
-        [bf3d.genString('secret'),bf3d.genString('robotron')],
-        [bf3d.genString('ccliffe')],
-        [bf3d.genString('humph')],
-        [bf3d.genString('corban')],
-        [bf3d.genString('cubicvr')],
-        [bf3d.genString('popcorn')],
+        [bf3d.genString(' starring')],
+        [bf3d.genString(' secret'),bf3d.genString(' robotron')],
+        [bf3d.genString(' ccliffe')],
+        [bf3d.genString(' humph')],
+        [bf3d.genString(' corban')],
+        [bf3d.genString(' cubicvr')],
+        [bf3d.genString(' popcorn')],
       ];
 
       for (var i=0; i<words.length; ++i) {
@@ -444,6 +481,8 @@ SegmentList.addSegment(function () {
       audioBuffer = audioEngine.audioBuffer;
       fft = audioEngine.fft;
       currentSeconds = timer.getSeconds();
+
+      scene.camera.target = cameraTarget.position;
 
       if (audioBuffer) {
         updateSoundFloor(currentSeconds);

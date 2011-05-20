@@ -33,6 +33,14 @@
     <script src="js/segment1.js"></script>
     <script src="js/segment2.js"></script>
     <script src="js/segment3.js"></script>
+    <script id="cubicvr-core-vs" src="lib/cubicvr/CubicVR_Core.vs" type="x-shader/x-vertex"></script>
+    <script id="cubicvr-core-fs" src="lib/cubicvr/CubicVR_Core.fs" type="x-shader/x-fragment"></script>
+    <script id="cubicvr-fx-general-vs" src="lib/cubicvr/post_shaders/fx_general.vs" type="x-shader/x-vertex"></script>
+    <script id="cubicvr-alpha-depth-fs" src="lib/cubicvr/post_shaders/alpha_depth.fs" type="x-shader/x-fragment"></script>
+    <script id="cubicvr-invert-fs" src="lib/cubicvr/post_shaders/invert.fs" type="x-shader/x-fragment"></script>
+    <script id="cubicvr-dof-6tap-fs" src="lib/cubicvr/post_shaders/dof_6tap.fs" type="x-shader/x-fragment"></script>
+    <script id="cubicvr-ssao-fs" src="lib/cubicvr/post_shaders/ssao.fs" type="x-shader/x-fragment"></script>
+    <script id="cubicvr-bloom-6tap-fs" src="lib/cubicvr/post_shaders/bloom_6tap.fs" type="x-shader/x-fragment"></script>
 		<script>
       var shaderList = [];
       var fxChain;
@@ -58,8 +66,7 @@
         canvas.style.top = toppx+"px";
         canvas.style.left = "0px";
         
-        
-        gl = CubicVR.GLCore.init(canvas, 'lib/cubicvr/CubicVR_Core.vs', 'lib/cubicvr/CubicVR_Core.fs');
+        gl = CubicVR.GLCore.init(canvas, 'cubicvr-core-vs', 'cubicvr-core-fs');
         
         if (!gl) {
           return;
