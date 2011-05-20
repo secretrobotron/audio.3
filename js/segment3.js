@@ -1,12 +1,13 @@
 SegmentList.addSegment(function () {
   var START_TIME = 126;
+  //var START_TIME = 1;
 
   var audioEngine;
   var audioBuffer, fft;
   var popcorn;
   var scene, animkit, bf3d;
 
-  var logoObject, words, audioPlane, audioTexture;
+  var logoObject, words, wordsWidth, audioPlane, audioTexture;
   var canvas, links = [], mvc;
   var currentSeconds;
   var rootLinkObject;
@@ -74,6 +75,9 @@ SegmentList.addSegment(function () {
         var linkObject = new CubicVR.SceneObject(CubicVR.primitives.plane({
           size: 1,
           material: new CubicVR.Material({
+            shininess: 2,
+            specular: [1, 1, 1],
+            diffuse: [1, 1, 1],
             textures: {
               color: new CubicVR.TextTexture(text, {font: '100pt Arial', color: color}),
             },
@@ -94,10 +98,11 @@ SegmentList.addSegment(function () {
         links.push(linkObject);
       };
 
-      makeLinkObject('mozillalabs.com/demoparty/helsinki', 'http://mozillalabs.com/demoparty/helsinki', '#ffaa00', [1, .4, 0], [.9, .2, 1], [0, 45, 10]);
+      makeLinkObject('mozillalabs.com/demoparty/helsinki', 'http://mozillalabs.com/demoparty/helsinki', '#ffaa00', [0, .8, 0], [1.1, .2, 1], [0, 0, 0]);
       makeLinkObject('github.com/cjcliffe/CubicVR.js', 'http://github.com/cjcliffe/CubicVR.js', '#ffffff', [-1, .4, 0], [.8, .2, 1], [0, -45, -10]);
       makeLinkObject('github.com/BillyWM/jsmodplayer', 'http://github.com/BillyWM/jsmodplayer', '#ffffff', [-1, -.4, 0], [.8, .2, 1], [0, -45, 10]);
       makeLinkObject('github.com/webmademovies/popcorn-js', 'http://github.com/webmademovies/popcorn-js', '#ffffff', [1, -.4, 0], [.8, .2, 1], [0, 45, -10]);
+      makeLinkObject('github.com/secretrobotron/audio.3', 'http://github.com/secretrobotron/audio.3', '#00aaff', [1, .4, 0], [.9, .2, 1], [0, 45, 10]);
 
       audioPlane.position = [0, 0, 6];
 
@@ -135,6 +140,7 @@ SegmentList.addSegment(function () {
 
       words.position = [0, -1.5, 2];
       words.rotation = [0, 180, 0];
+      wordsWidth = str.length;
       mot = words.motion = new CubicVR.Motion();
       mot.setKey(CubicVR.enums.motion.POS, CubicVR.enums.motion.X, START_TIME, -str.length/2).tension=0;
       mot.setKey(CubicVR.enums.motion.POS, CubicVR.enums.motion.X, START_TIME+90, str.length/2).tension=0;
@@ -164,27 +170,28 @@ SegmentList.addSegment(function () {
       scene.bindSceneObject(rootLinkObject, true);
       scene.bindSceneObject(logoObject);
       scene.bindSceneObject(words);
-      var pLight = new CubicVR.Light({
-        type: CubicVR.enums.light.type.POINT,
-        specular: [1, 1, 1],
-        diffuse: [1, 1, 1],
-        intensity: .5,
-        distance: 10,
-       aposition: [0, 0, 2],
-      });
-      scene.bindLight(pLight);
       var spotLight = (new CubicVR.Light({
         type: CubicVR.enums.light.type.SPOT_SHADOW,
         specular: [1 ,1, 1],
         diffuse: [1, 1, 1],
-        intensity: .4,
-        distance: 15,
+        intensity: .2,
+        distance: 35,
         cutoff: 200,
         map_res: 1024,
         position: [0, -2, -3],
       }));
       spotLight.lookat([0, 0, 0]);
       scene.bindLight(spotLight);
+
+      var pLight = new CubicVR.Light({
+        type: CubicVR.enums.light.type.POINT,
+        specular: [1, 1, 1],
+        diffuse: [1, 1, 1],
+        intensity: .6,
+        distance: 20,
+        position: [0, 0, -2],
+      });
+      scene.bindLight(pLight);
 
       mvc = new CubicVR.MouseViewController(canvas, scene.camera);
       canvas.addEventListener('click', function (e) {
@@ -199,6 +206,18 @@ SegmentList.addSegment(function () {
     },
     update: function (timer) {
       currentSeconds = timer.getSeconds();
+
+      var wordsPos = words.position;
+      for (var i=0; i<words.children.length; ++i) {
+        var child = words.children[i];
+        var childPos = child.position[0] - wordsPos[0];
+        if (childPos < -20 || childPos > 20) {
+          child.visible = false;
+        }
+        else {
+          child.visible = true;
+        } //if
+      } //for
 
       var rayTest = scene.bbRayTest(scene.camera.position, mvc.getMousePosition(), 3);
       if (rayTest.length > 0) {
