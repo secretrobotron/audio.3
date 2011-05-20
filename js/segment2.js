@@ -54,7 +54,7 @@ SegmentList.addSegment(function () {
         specular: [1, 5, 0],
         shininess: 0.9,
         textures: {
-          envsphere: new CubicVR.Texture("img/fract_reflections.jpg")
+          envsphere: new CubicVR.CanvasTexture(document.getElementById("img/fract_reflections.jpg"))
         }
       });
         
@@ -71,7 +71,7 @@ SegmentList.addSegment(function () {
         specular: [1,1,1],
         shininess: 0.9,
         textures: {
-          envsphere: new CubicVR.Texture("img/fract_reflections.jpg")
+          envsphere: new CubicVR.CanvasTexture(document.getElementById("img/fract_reflections.jpg"))
         }
       });
 

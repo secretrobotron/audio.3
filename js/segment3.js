@@ -26,7 +26,7 @@ SegmentList.addSegment(function () {
         specular: [1, 5, 0],
         shininess: 0.9,
         textures: {
-          envsphere: new CubicVR.Texture("img/fract_reflections.jpg")
+          envsphere: new CubicVR.CanvasTexture(document.getElementById("img/fract_reflections.jpg"))
         }
       });
         
@@ -103,8 +103,8 @@ SegmentList.addSegment(function () {
 
       var logoMaterial = new CubicVR.Material({
         textures: {
-          color: new CubicVR.Texture("img/logo.jpg"),
-          alpha: new CubicVR.Texture("img/logo-alpha.jpg"),
+          color: new CubicVR.CanvasTexture(document.getElementById("img/logo.jpg")),
+          alpha: new CubicVR.CanvasTexture(document.getElementById("img/logo-alpha.jpg")),
         },
       });
 
