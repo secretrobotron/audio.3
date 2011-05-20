@@ -149,7 +149,7 @@ SegmentList.addSegment(function () {
         specular: [1, 5, 0],
         shininess: 0.9,
         textures: {
-          envsphere: new CubicVR.Texture("img/fract_reflections.jpg")
+          envsphere: new CubicVR.CanvasTexture(document.getElementById("img/fract_reflections.jpg"))
         }
       });
         
@@ -436,13 +436,14 @@ SegmentList.addSegment(function () {
       scene.removeLight(spotLights[0]);
       scene.removeLight(spotLights[1]);
       scene.removeSceneObject(soundFloorRingParent);
+      for (var i=0; i<dateTextObjects.length; ++i) {
+        scene.removeSceneObject(dateTextObjects[i]);
+      } //for
     },
     update: function (timer) {
       audioBuffer = audioEngine.audioBuffer;
       fft = audioEngine.fft;
       currentSeconds = timer.getSeconds();
-
-      //spotLight.position[0] = 7.0*Math.sin(currentSeconds/2.0);
 
       if (audioBuffer) {
         updateSoundFloor(currentSeconds);

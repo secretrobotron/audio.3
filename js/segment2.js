@@ -54,7 +54,7 @@ SegmentList.addSegment(function () {
         specular: [1, 5, 0],
         shininess: 0.9,
         textures: {
-          envsphere: new CubicVR.Texture("img/fract_reflections.jpg")
+          envsphere: new CubicVR.CanvasTexture(document.getElementById("img/fract_reflections.jpg"))
         }
       });
         
@@ -71,7 +71,7 @@ SegmentList.addSegment(function () {
         specular: [1,1,1],
         shininess: 0.9,
         textures: {
-          envsphere: new CubicVR.Texture("img/fract_reflections.jpg")
+          envsphere: new CubicVR.CanvasTexture(document.getElementById("img/fract_reflections.jpg"))
         }
       });
 
@@ -252,15 +252,14 @@ SegmentList.addSegment(function () {
       scene.bindSceneObject(boxObject);
     },
     unload: function () {
-      while (scene.lights.length > 0) {
-        scene.removeLight(scene.lights[0]);
-      } //while
+      scene.removeLight(spotLight);
+      scene.removeLight(pointLight);
       scene.removeSceneObject(boxObject);
     },
     update: function (timer) {
       var seconds = timer.getSeconds();
 
-      boxRotation *= 1.1;
+      boxRotation *= 1.07;
       boxObject.rotation[1] += boxRotation;
 
       if (cameraMode === 0) {
