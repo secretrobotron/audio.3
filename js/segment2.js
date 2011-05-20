@@ -250,6 +250,8 @@ SegmentList.addSegment(function () {
       scene.bindLight(spotLight);
       scene.bindLight(pointLight);
       scene.bindSceneObject(boxObject);
+      scene.camera.target = [0,0,0];
+      cameraTarget = [0,0,0];
     },
     unload: function () {
       scene.removeLight(spotLight);
