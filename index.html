@@ -141,8 +141,8 @@
         shaderList.push(shaderQuarterBloom);
 
         fxChain = new CubicVR.PostProcessChain(canvas.width, canvas.height, true);
-        fxChain.setBlurOpacity(1);
-        fxChain.setBlurIntensity(0);
+        fxChain.setBlurOpacity(0.75);
+        fxChain.setBlurIntensity(1.0);
 
         for (var i = 0; i < shaderList.length; i++) {
           fxChain.addShader(shaderList[i]);
