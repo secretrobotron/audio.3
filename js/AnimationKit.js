@@ -25,9 +25,9 @@ function AnimationKit() {
                   for (i = 0; i < spintotal - spinstep; i += spinstep) {
                       t = (c / spincount) * totaltime + start_time + tofs;
 
-                      mot.setKey(0, 0, t, distance * (1.0 - c / spincount) * Math.sin(i * (180.0 / M_PI)));
+                      mot.setKey(0, 0, t, distance * (1.0 - c / spincount) * Math.sin(i * (180.0 / Math.PI)));
                       mot.setKey(0, 1, t, ypos);
-                      mot.setKey(0, 2, t, distance * (1.0 - c / spincount) * Math.cos(i * (180.0 / M_PI)));
+                      mot.setKey(0, 2, t, distance * (1.0 - c / spincount) * Math.cos(i * (180.0 / Math.PI)));
 
                       mot.setKey(1, 0, t, i + tofs);
                       mot.setKey(1, 2, t, -i + tofs);
@@ -55,9 +55,9 @@ function AnimationKit() {
                   for (i = spinstep; i < spintotal; i += spinstep) {
                       t = 1.0+(c / spincount) * totaltime + start_time + tofs;
 
-                      mot.setKey(0, 0, t, distance * (c / spincount) * Math.sin(i+90 * (180.0 / M_PI)));
+                      mot.setKey(0, 0, t, distance * (c / spincount) * Math.sin(i+90 * (180.0 / Math.PI)));
                       mot.setKey(0, 1, t, ypos);
-                      mot.setKey(0, 2, t, distance * (c / spincount) * Math.cos(i+90 * (180.0 / M_PI)));
+                      mot.setKey(0, 2, t, distance * (c / spincount) * Math.cos(i+90 * (180.0 / Math.PI)));
 
                       mot.setKey(1, 0, t, i + tofs);
                       mot.setKey(1, 2, t, -i + tofs);
@@ -86,9 +86,9 @@ function AnimationKit() {
                   for (i = 0; i < spintotal - spinstep; i += spinstep) {
                       t = (c / spincount) * totaltime + start_time + tofs;
 
-                      mot.setKey(0, 0, t, (1.0 - c / spincount)*sceneObj.children[j].position[0]+distance * (1.2 - c / spincount) * Math.sin(i * (180.0 / M_PI)));
+                      mot.setKey(0, 0, t, (1.0 - c / spincount)*sceneObj.children[j].position[0]+distance * (1.2 - c / spincount) * Math.sin(i * (180.0 / Math.PI)));
                       mot.setKey(0, 1, t, (1.0 - c / spincount)*sceneObj.children[j].position[1]+ypos);
-                      mot.setKey(0, 2, t, (1.0 - c / spincount)*sceneObj.children[j].position[2]+distance * (1.2 - c / spincount) * Math.cos(i * (180.0 / M_PI)));
+                      mot.setKey(0, 2, t, (1.0 - c / spincount)*sceneObj.children[j].position[2]+distance * (1.2 - c / spincount) * Math.cos(i * (180.0 / Math.PI)));
 
                       mot.setKey(1, 0, t, i + tofs);
                       mot.setKey(1, 2, t, -i + tofs);
@@ -116,9 +116,9 @@ function AnimationKit() {
                   for (i = spinstep; i < spintotal; i += spinstep) {
                       t = 1.0+(c / spincount) * totaltime + start_time + tofs;
 
-                      mot.setKey(0, 0, t, (1.0 - c / spincount)*sceneObj.children[j].position[0]+distance * (c / spincount) * Math.sin(i+90 * (180.0 / M_PI)));
+                      mot.setKey(0, 0, t, (1.0 - c / spincount)*sceneObj.children[j].position[0]+distance * (c / spincount) * Math.sin(i+90 * (180.0 / Math.PI)));
                       mot.setKey(0, 1, t, (1.0 - c / spincount)*sceneObj.children[j].position[1]+ypos);
-                      mot.setKey(0, 2, t, (1.0 - c / spincount)*sceneObj.children[j].position[2]+distance * (c / spincount) * Math.cos(i+90 * (180.0 / M_PI)));
+                      mot.setKey(0, 2, t, (1.0 - c / spincount)*sceneObj.children[j].position[2]+distance * (c / spincount) * Math.cos(i+90 * (180.0 / Math.PI)));
 
                       mot.setKey(1, 0, t, i + tofs);
                       mot.setKey(1, 2, t, -i + tofs);

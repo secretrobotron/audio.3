@@ -141,7 +141,7 @@
                 var fft;
                 var audioBuffer;
                 var signal = new Float32Array(4096);
-                var audioEngine = new AudioEngine(function(data) {
+                var audioEngine = new AudioEngine(null,function(data) {
                     fft.forward(data);
                     audioBuffer = data;
                     for (var i = 0, l = 4096; i < l; ++i) {
