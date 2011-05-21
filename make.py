@@ -1,4 +1,5 @@
 import re
+import base64
 
 in_file = open('index.html', 'r')
 contents = in_file.read()
@@ -39,6 +40,12 @@ for shader in shaders:
   swaps = re.findall('shader_fragment:\ ?[\'|"]'+shader_src.group(2)+'[\'|"]', contents)
   for swap in swaps:
     contents = contents.replace(swap, 'shader_fragment: "'+shader_src.group(1)+'"')
+
+audio_file = open('mod.mod', 'rb')
+audio_data = audio_file.read()
+audio_str = base64.encodestring(audio_data)
+audio_file.close()
+contents = contents.replace('audioData;', 'audioData = "'+(str(audio_str)[2:-1].replace("\\n",''))+'";')
 
 out_file = open('super.html', 'w')
 out_file.write(contents)

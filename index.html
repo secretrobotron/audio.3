@@ -48,6 +48,7 @@
       var gl;
 			var canvas_w, canvas_h, aspect;
 			var canvas, scene;
+      var audioData;
 
 			document.addEventListener('DOMContentLoaded', function (e) {
         canvas = document.createElement('canvas');
@@ -166,7 +167,7 @@
         var fft;
         var audioBuffer;
         var signal = new Float32Array(4096);
-        var audioEngine = new AudioEngine(function (data) {
+        var audioEngine = new AudioEngine(audioData, function (data) {
           fft.forward(data);
           audioBuffer = data;
           audioEngine.audioBuffer = data;

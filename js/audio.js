@@ -1,4 +1,4 @@
-function AudioEngine ( updateFunction ) {
+function AudioEngine ( audioData, updateFunction ) {
 
   var modPlayer;
   var playing = false;
@@ -42,6 +42,21 @@ function AudioEngine ( updateFunction ) {
 
   }; //writeAudio
 
+  function loadEmbedded() {
+    var t = atob(audioData);
+    var ff = [];
+    var mx = t.length;
+    var scc= String.fromCharCode;
+    for (var z = 0; z < mx; z++) {
+      ff[z] = scc(t.charCodeAt(z) & 255);
+    }
+    var binString = ff.join("");
+      
+    var modFile = new ModFile(binString);
+    modPlayer = new ModPlayer(modFile, 44100);
+    play();
+  }; //loadEmbedded
+
   function loadRemote(path) {
     var fetch = new XMLHttpRequest();
     fetch.open('GET', path);
@@ -73,7 +88,13 @@ function AudioEngine ( updateFunction ) {
       var writeInterval = Math.floor(1000 * bufferSize / sampleRate);
       setInterval(writeAudio, writeInterval);
     } //if
-    loadRemote(modFileName);
+
+    if (audioData) {
+      loadEmbedded();
+    }
+    else {
+      loadRemote(modFileName);
+    } //if
   };
 
 }; //ModPlayer
