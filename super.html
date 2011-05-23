@@ -804,7 +804,7 @@ function TypedArray(size, type) {
 
 /*globals alert: false */
 
-(function(window, document, Math, undef) {
+(function(window, document, Math, nop, undef) {
 
   /** Global Constants **/
   var M_PI = Math.PI;
@@ -814,12 +814,13 @@ function TypedArray(size, type) {
   var SCRIPT_LOCATION = "";
 
   try {
-    Array.forEach(document.querySelectorAll("script"), function (a) {
-      var pos = a.src.lastIndexOf('/CubicVR.js');
+    var scriptNodes = document.querySelectorAll("script");
+    for (var i = 0, iMax = scriptNodes.length; i<iMax; i++) {
+      var pos = scriptNodes[i].src.lastIndexOf('/CubicVR.js');
       if (pos > -1) {
-        SCRIPT_LOCATION = a.src.substr(0, pos) + "/";
+        SCRIPT_LOCATION = scriptNodes[i].src.substr(0, pos) + "/";
       } //if
-    });
+    }
   }
   catch(e) {
     // likely that 'document' is not defined (doesn't really matter)
@@ -1159,6 +1160,16 @@ function TypedArray(size, type) {
         mat[5] = mat[7];
         mat[6] = a02;
         mat[7] = a12;
+    },
+    vec3_multiply: function (m1, m2) {
+        var mOut = [];
+
+
+        mOut[0] = m2[0] * m1[0] + m2[3] * m1[1] + m2[6] * m1[2] ;
+        mOut[1] = m2[1] * m1[0] + m2[4] * m1[1] + m2[7] * m1[2] ;
+        mOut[2] = m2[2] * m1[0] + m2[5] * m1[1] + m2[8] * m1[2];
+
+        return mOut;
     }
   }
 
@@ -1510,7 +1521,6 @@ function TypedArray(size, type) {
       }
   };
   
-  
   var util = {
     getScriptContents: function(id) {
       var shaderScript = document.getElementById(id);
@@ -1666,17 +1676,20 @@ function TypedArray(size, type) {
   /* Core Init, single context only at the moment */
   GLCore.init = function(gl_in, vs_in, fs_in) {
     var gl;
-    
-    if (vs_in === undef && fs_in === undef) { // default shader handler if no custom override specified
-      if (window.CubicVR.CubicVRCoreVS && window.CubicVR.CubicVRCoreFS) {
-        vs_in = window.CubicVR.CubicVRCoreVS;
-        fs_in = window.CubicVR.CubicVRCoreFS;
+
+    if (vs_in && fs_in) {
+      vs_in = util.getScriptContents(vs_in);
+      fs_in = util.getScriptContents(fs_in);
+    } else {  // default shader handler if no custom override specified
+      // See if they have been embeded in js
+      if (CubicVR.CubicVRCoreVS && CubicVR.CubicVRCoreFS) {
+        vs_in = CubicVR.CubicVRCoreVS;
+        fs_in = CubicVR.CubicVRCoreFS;
       } else {
-        vs_in = SCRIPT_LOCATION + "CubicVR_Core.vs";
-        fs_in = SCRIPT_LOCATION + "CubicVR_Core.fs";
+        vs_in = util.getScriptContents(SCRIPT_LOCATION + "CubicVR_Core.vs");
+        fs_in = util.getScriptContents(SCRIPT_LOCATION + "CubicVR_Core.fs");
       }
     }
-        
 
     if (gl_in === undef) {  // no canvas? no problem!
       gl_in = document.createElement("canvas");
@@ -1698,7 +1711,7 @@ function TypedArray(size, type) {
       document.body.appendChild(gl_in);
     }
     
-    if (gl_in.getContext!==undef&&gl_in.width!==undef&&gl_in.height!==undef)
+    if (gl_in.getContext !== undef && gl_in.width !== undef && gl_in.height !== undef)
     {
       try {
             if (!gl) gl = gl_in.getContext("experimental-webgl");
@@ -1725,8 +1738,8 @@ function TypedArray(size, type) {
     }
 
     GLCore.gl = gl;
-    GLCore.CoreShader_vs = util.getScriptContents(vs_in);
-    GLCore.CoreShader_fs = util.getScriptContents(fs_in);
+    GLCore.CoreShader_vs = vs_in;
+    GLCore.CoreShader_fs = fs_in;
 
     gl.enable(gl.CULL_FACE);
     gl.cullFace(gl.BACK);
@@ -1831,24 +1844,6 @@ function TypedArray(size, type) {
     } else {
       e.resize(width,height);
     }
-    
-    /*
-    
-     canvas.style.position="absolute";
-      
-		  aspect = 1280/720;
-			canvas_w = window.innerWidth;
-			canvas_h = canvas_w*(1.0/aspect);
-			if (canvas_h>window.innerHeight) canvas_h = window.innerHeight;
-
-			var toppx = (window.innerHeight/2)-(canvas_h/2);
-
-      canvas.width = canvas_w;
-      canvas.height = canvas_h;
-      canvas.style.top = toppx+"px";
-      canvas.style.left = "0px";
-      
-    */
   }
 
   GLCore.setDepthAlpha = function(da, near, far) {
@@ -2649,7 +2644,7 @@ function TypedArray(size, type) {
 
   Face.prototype.flip = function() {
     for (var i = 0, iMax = this.point_normals.length; i < iMax; i++) {
-      this.point_normals[i] = [this.point_normals[i][0], this.point_normals[i][1], this.point_normals[i][2]];
+      this.point_normals[i] = [-this.point_normals[i][0], -this.point_normals[i][1], -this.point_normals[i][2]];
     }
 
     this.points.reverse();
@@ -3735,6 +3730,9 @@ function Light(light_type, lighting_method) {
   if (this.light_type === enums.light.type.SPOT_SHADOW) {
     this.setShadow(this.map_res);
   }
+  
+  this.lDir = [0,0,0];
+  this.lPos = [0,0,0];  
 }
 
 Light.prototype.setType = function(light_type) {
@@ -3764,7 +3762,18 @@ Light.prototype.setCutoff = function(cutoff_angle) {
   this.cutoff = cutoff_angle;
 }
 
-
+Light.prototype.prepare = function(camera) {
+  var ltype = this.light_type;
+  
+  if (ltype === enums.light.type.DIRECTIONAL) {
+    this.lDir = mat3.vec3_multiply(this.direction,camera.nMatrix);
+  } else if (ltype === enums.light.type.SPOT || ltype === enums.light.type.SPOT_SHADOW) {
+    this.lDir = mat3.vec3_multiply(this.direction,camera.nMatrix);
+    this.lPos = mat4.vec3_multiply(this.position,camera.mvMatrix);
+  } else if (ltype === enums.light.type.POINT) {
+    this.lPos = mat4.vec3_multiply(this.position,camera.mvMatrix);
+  }
+}
 Light.prototype.control = function(controllerId, motionId, value) {
   if (controllerId === enums.motion.POS) {
     this.position[motionId] = value;
@@ -3851,8 +3860,8 @@ Light.prototype.setupShader = function(lShader,lNum) {
     
     gl.uniform3fv(lUniforms.lDiff, this.diffuse);
     gl.uniform3fv(lUniforms.lSpec, this.specular);
-    gl.uniform3fv(lUniforms.lPos, this.position);
-    gl.uniform3fv(lUniforms.lDir, this.direction);
+    if (this.lPos) gl.uniform3fv(lUniforms.lPos, this.lPos);
+    if (this.lDir) gl.uniform3fv(lUniforms.lDir, this.lDir);
 
     gl.uniform1f(lUniforms.lInt, this.intensity);
     gl.uniform1f(lUniforms.lDist, this.distance);
@@ -3988,9 +3997,7 @@ function Shader(vs_id, fs_id) {
   GLCore.gl.linkProgram(this.shader);
 
   if (!GLCore.gl.getProgramParameter(this.shader, GLCore.gl.LINK_STATUS)) {
-//    alert("Could not initialise shader vert(" + vs_id + "), frag(" + fs_id + ")");
-      throw new Error("Could not initialise shader vert(" + vs_id + "), frag(" + fs_id + ")");
-    return;
+    throw new Error("Could not initialise shader vert(" + vs_id + "), frag(" + fs_id + ")");
   }
 }
 
@@ -4678,24 +4685,6 @@ Texture.prototype.setFilter = function(filterType) {
   var gl = CubicVR.GLCore.gl;
 
   gl.bindTexture(gl.TEXTURE_2D, Textures[this.tex_id]);
-  /*
-  switch (filterType)
-  {
-    case enums.texture.filter.LINEAR:
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    break;
-    case enums.texture.filter.LINEAR_MIP:
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
-      gl.generateMipmap(gl.TEXTURE_2D);      
-    break;
-    case enums.texture.filter.NEAREST:    
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);  
-    break;
-  }
-  */
 
   if (filterType === enums.texture.filter.LINEAR) {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
@@ -5673,31 +5662,6 @@ Landscape.prototype.getFaceAt = function(x, z) {
 };
 
 
-/*
-  cvrFloat Landscape::getHeightValue(XYZ &pt)
-  {
-    Face *tmpFace;
-    XYZ *tmpPoint;
-
-    int faceNum = getFaceAt(pt);
-
-    if (faceNum === -1) return 0;
-
-    tmpFace = obj->faces[faceNum];
-    tmpPoint = obj->points[obj->faces[faceNum]->pointref[0]];
-
-    tmpFace->calcFaceNormal();
-
-    cvrFloat na = tmpFace->face_normal.x;
-    cvrFloat nb = tmpFace->face_normal.y;
-    cvrFloat nc = tmpFace->face_normal.z;
-
-    cvrFloat d = -na * tmpPoint->x - nb * tmpPoint->y - nc * tmpPoint->z;
-
-    return ((na * pt.x + nc * pt.z+d)/-nb)+getPosition().y;
-  };
-  */
-
 Landscape.prototype.getHeightValue = function(x, z) {
 
   if (typeof(x) === 'object') {
@@ -5931,20 +5895,6 @@ SceneObject.prototype.control = function(controllerId, motionId, value) {
   } else if (controllerId === enums.motion.ROT) {
     this.rotation[motionId] = value;
   }
-
-  /*
-  switch (controllerId) {
-  case enums.motion.POS:
-    this.position[motionId] = value;
-    break;
-  case enums.motion.SCL:
-    this.scale[motionId] = value;
-    break;
-  case enums.motion.ROT:
-    this.rotation[motionId] = value;
-    break;
-  }
-  */
 };
 
 SceneObject.prototype.getAABB = function() {
@@ -6400,41 +6350,6 @@ Envelope.prototype.evaluate = function(time) {
       return out * (time - skey.time) + skey.value;
     } 
 
-    /*
-    switch (this.in_behavior) {
-    case enums.envelope.behavior.RESET:
-      return 0.0;
-
-    case enums.envelope.behavior.CONSTANT:
-      return skey.value;
-
-    case enums.envelope.behavior.REPEAT:
-      tmp = cubicvr_env_range(time, skey.time, ekey.time);
-      time = tmp[0];
-      break;
-
-    case enums.envelope.behavior.OSCILLATE:
-      tmp = cubicvr_env_range(time, skey.time, ekey.time);
-      time = tmp[0];
-      noff = tmp[1];
-
-      if (noff % 2) {
-        time = ekey.time - skey.time - time;
-      }
-      break;
-
-    case enums.envelope.behavior.OFFSET:
-      tmp = cubicvr_env_range(time, skey.time, ekey.time);
-      time = tmp[0];
-      noff = tmp[1];
-      offset = noff * (ekey.value - skey.value);
-      break;
-
-    case enums.envelope.behavior.LINEAR:
-      out = cubicvr_env_outgoing(skey, skey.next) / (skey.next.time - skey.time);
-      return out * (time - skey.time) + skey.value;
-    }
-    */
   }
 
   /* use post-behavior if time is after last key time */
@@ -6465,41 +6380,6 @@ Envelope.prototype.evaluate = function(time) {
       inval = cubicvr_env_incoming(ekey.prev, ekey) / (ekey.time - ekey.prev.time);
       return inval * (time - ekey.time) + ekey.value;
     } 
-    /*
-    switch (this.out_behavior) {
-    case enums.envelope.behavior.RESET:
-      return 0.0;
-
-    case enums.envelope.behavior.CONSTANT:
-      return ekey.value;
-
-    case enums.envelope.behavior.REPEAT:
-      tmp = cubicvr_env_range(time, skey.time, ekey.time);
-      time = tmp[0];
-      break;
-
-    case enums.envelope.behavior.OSCILLATE:
-      tmp = cubicvr_env_range(time, skey.time, ekey.time);
-      time = tmp[0];
-      noff = tmp[1];
-
-      if (noff % 2) {
-        time = ekey.time - skey.time - time;
-      }
-      break;
-
-    case enums.envelope.behavior.OFFSET:
-      tmp = cubicvr_env_range(time, skey.time, ekey.time);
-      time = tmp[0];
-      noff = tmp[1];
-      offset = noff * (ekey.value - skey.value);
-      break;
-
-    case enums.envelope.behavior.LINEAR:
-      inval = cubicvr_env_incoming(ekey.prev, ekey) / (ekey.time - ekey.prev.time);
-      return inval * (time - ekey.time) + ekey.value;
-    }
-    */
   }
 
   // get the endpoints of the interval being evaluated
@@ -6520,29 +6400,6 @@ Envelope.prototype.evaluate = function(time) {
   t = (time - key0.time) / (key1.time - key0.time);
 
   // interpolate
-  /*
-  switch (key1.shape) {
-  case enums.envelope.shape.TCB:
-  case enums.envelope.shape.BEZI:
-  case enums.envelope.shape.HERM:
-    out = cubicvr_env_outgoing(key0, key1);
-    inval = cubicvr_env_incoming(key0, key1);
-    var h = cubicvr_env_hermite(t);
-    return h[0] * key0.value + h[1] * key1.value + h[2] * out + h[3] * inval + offset;
-
-  case enums.envelope.shape.BEZ2:
-    return cubicvr_env_bez2_time(key0, key1, time) + offset;
-
-  case enums.envelope.shape.LINE:
-    return key0.value + t * (key1.value - key0.value) + offset;
-
-  case enums.envelope.shape.STEP:
-    return key0.value + offset;
-
-  default:
-    return offset;
-  }
-  */
 
   var keyShape = key1.shape;
 
@@ -7821,19 +7678,6 @@ Camera.prototype.control = function(controllerId, motionId, value) {
   } else if (controllerId === enums.motion.FARCLIP) {
    this.setClip(this.nearclip,value);
   } 
-  /*
-  switch (controllerId) {
-  case enums.motion.ROT:
-    this.rotation[motionId] = value;
-    break;
-  case enums.motion.POS:
-    this.position[motionId] = value;
-    break;
-  case enums.motion.FOV:
-    this.setFOV(value);
-    break;
-  }
-  */
 };
 
 
@@ -8431,7 +8275,11 @@ Scene.prototype.render = function() {
   ++this.frames;
 
   this.updateCamera();
-
+  
+  for (var i = 0, iMax = this.lights.length; i < iMax; i++) {
+    this.lights[i].prepare(this.camera);
+  }
+  
   var gl = GLCore.gl;
   var frustum_hits;
 
@@ -9044,7 +8892,7 @@ RenderBuffer.prototype.createBuffer = function(width, height, depth_enabled) {
   if (depth_enabled) {
     gl.bindRenderbuffer(gl.RENDERBUFFER, this.depth);
 
-    if (navigator.appVersion.indexOf("Windows")!==-1 || 1)
+    if (navigator.appVersion.indexOf("Windows")!==-1)
     {
       gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, w, h);
       gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, this.depth); 
@@ -10142,9 +9990,9 @@ function cubicvr_loadColladaWorker(meshUrl, prefix, callback, deferred_bin) {
 
       for (var i=0, maxI=scene.sceneObjects.length; i<maxI; ++i) {
         var so = scene.sceneObjects[i];
-   
+
         if (so.obj !== null) {
-          
+         nop();
         } //if
 
         if (so.reassembled === undefined) {
@@ -10494,7 +10342,10 @@ function cubicvr_parseCollada(meshUrl, prefix, deferred_bin) {
 
     var up_axis = clib.up_axis;
 
-    if (cl_source.library_images) if (cl_source.library_images.image.length) {
+
+    if (cl_source.library_images) {
+      if (cl_source.library_images.image && !cl_source.library_images.image.length) cl_source.library_images.image = [cl_source.library_images.image];
+      if (cl_source.library_images.image.length) {
         var cl_images = cl_source.library_images.image;
         for (var imgCount = 0, imgCountMax = cl_images.length; imgCount < imgCountMax; imgCount++) {
             var cl_img = cl_images[imgCount];
@@ -10511,7 +10362,6 @@ function cubicvr_parseCollada(meshUrl, prefix, deferred_bin) {
                 if (prefix !== undef && (imageSource.lastIndexOf("\\") !== -1)) {
                     imageSource = imageSource.substr(imageSource.lastIndexOf("\\") + 1);
                 }
-
                 // console.log("Image reference: "+imageSource+" @"+imageId+":"+imageName);
                 clib.images[imageId] = {
                     source: imageSource,
@@ -10519,6 +10369,7 @@ function cubicvr_parseCollada(meshUrl, prefix, deferred_bin) {
                     name: imageName
                 };
             }
+          }
         }
     }
 
@@ -10684,10 +10535,18 @@ function cubicvr_parseCollada(meshUrl, prefix, deferred_bin) {
                             if (f !== false) {
                                 effect.material.shininess = f;
                             }
-                        } else if (tagName == "reflective") {} else if (tagName == "reflectivity") {} else if (tagName == "transparent") {} else if (tagName == "index_of_refraction") {}
+                        } else if (tagName == "reflective") {
+                          nop();
+                        } else if (tagName == "reflectivity") {
+                          nop();
+                        } else if (tagName == "transparent") {
+                          nop();
+                        } else if (tagName == "index_of_refraction") {
+                          nop();
+                        }
+
                         // case "transparency": if (f!==false) effect.material.opacity = 1.0-f; break;
                         if (t !== false) {
-                            effect.material
                             var srcTex = effect.surfaces[effect.samplers[t].source].source;
                             if (tagName == "emission") {
                                 effect.material.textures_ref.push({
@@ -10719,7 +10578,11 @@ function cubicvr_parseCollada(meshUrl, prefix, deferred_bin) {
                                     image: srcTex,
                                     type: enums.texture.map.ALPHA
                                 });
-                            } else if (tagName == "transparency") {} else if (tagName == "index_of_refraction") {}
+                            } else if (tagName == "transparency") {
+                              nop();
+                            } else if (tagName == "index_of_refraction") {
+                              nop();
+                            }
                         }
                     }
                 }
@@ -11291,7 +11154,7 @@ function cubicvr_parseCollada(meshUrl, prefix, deferred_bin) {
             var sceneName = cl_scene["@name"];
 
             var sceneData = {
-                id: sceneName,
+                id: sceneId,
                 sceneObjects: [],
                 cameras: [],
                 lights: [],
@@ -11346,7 +11209,8 @@ function cubicvr_parseCollada(meshUrl, prefix, deferred_bin) {
                         sceneObject.position = it.position;
                         sceneObject.rotation = it.rotation;
                         sceneObject.scale = it.scale;
-                        sceneObject.meshId = meshName;
+                        sceneObject.meshId = meshId;
+                        sceneObject.meshName = meshName;
 
                         sceneData.sceneObjects.push(sceneObject);
 
@@ -11658,7 +11522,7 @@ function cubicvr_loadCollada(meshUrl, prefix, deferred_bin) {
         for (var so = 0, soMax = scn.sceneObjects.length; so < soMax; so++) {
             var sceneObj = scn.sceneObjects[so];
             var newSceneObject = new SceneObject(sceneObj);
-            var srcMesh = meshRef[sceneObj.meshId] || null;
+            var srcMesh = (meshRef[sceneObj.meshName]?meshRef[sceneObj.meshName]:meshRef[sceneObj.meshId]) || null;
             newSceneObject.obj = srcMesh;
 
             sceneObjectMap[sceneObj.id] = newSceneObject;
@@ -12963,8 +12827,7 @@ for (var ext in extend) {
 
 Materials.push(new Material("(null)"));
 
-}(window, window.document, Math));
-
+}(window, window.document, Math, function(){console.log('nop!');}));
 
 </script>
 		<script type="text/javascript">
@@ -19702,24 +19565,24 @@ SegmentList.addSegment(function () {
 
 </script>
     <script id="cubicvr-core-vs" type="x-shader/x-vertex">
-	attribute vec3 aVertexPosition;
-	attribute vec3 aNormal;
+  attribute vec3 aVertexPosition;
+  attribute vec3 aNormal;
   attribute vec2 aTextureCoord;
-	varying vec2 vTextureCoord;
+  varying vec2 vTextureCoord;
 
 //  #if hasColorMap||hasBumpMap||hasNormalMap||hasAmbientMap||hasSpecularMap||hasAlphaMap
 //  #endif
 
-	uniform mat4 uMVMatrix;
-	uniform mat4 uPMatrix;
-	uniform mat4 uOMatrix;
-	uniform mat3 uNMatrix;
+  uniform mat4 uMVMatrix;
+  uniform mat4 uPMatrix;
+  uniform mat4 uOMatrix;
+  uniform mat3 uNMatrix;
 
   vec3 mSpec;
   float mShine;
 
-	varying vec3 vNormal;
-	varying vec4 vPosition;
+  varying vec3 vNormal;
+  varying vec4 vPosition;
 
 #if !depthPack
 
@@ -19736,7 +19599,6 @@ SegmentList.addSegment(function () {
 #endif
   };
  uniform Light lights[loopCount];
- varying vec3 lightDir[loopCount];
 #endif
 
 #if hasShadow
@@ -19745,23 +19607,18 @@ SegmentList.addSegment(function () {
 #endif
 
 
-#if lightPoint||lightSpot
-  varying vec3 lightPos[loopCount];
-#endif
-
-
 #if hasEnvSphereMap
 #if hasNormalMap
-	varying vec3 u;
+  varying vec3 u;
 #else
-	varying vec2 vEnvTextureCoord;
+  varying vec2 vEnvTextureCoord;
 #endif
 #endif
 
 
-	
+  
 #if hasBumpMap||hasNormalMap
-	varying vec3 eyeVec; 
+  varying vec3 eyeVec; 
 #endif
 
 #endif // !depthPack
@@ -19771,80 +19628,63 @@ void main(void)
   mat4 uMVOMatrix = uMVMatrix * uOMatrix;
   mat4 uMVPMatrix = uPMatrix * uMVMatrix;
 
-	vPosition = uMVOMatrix * vec4(aVertexPosition, 1.0);
-	
-	gl_Position = uMVPMatrix * uOMatrix * vec4(aVertexPosition, 1.0);
+  vPosition = uMVOMatrix * vec4(aVertexPosition, 1.0);
+  
+  gl_Position = uMVPMatrix * uOMatrix * vec4(aVertexPosition, 1.0);
 
-	vTextureCoord = aTextureCoord;
+  vTextureCoord = aTextureCoord;
 
 #if !depthPack
-	
+  
   vNormal = uNMatrix * normalize(uOMatrix*vec4(aNormal,0.0)).xyz;
 
 
 #if hasBumpMap||hasNormalMap
-	vec3 tangent;
-	vec3 binormal;
+  vec3 tangent;
+  vec3 binormal;
 
-	vec3 c1 = cross( aNormal, vec3(0.0, 0.0, 1.0) );
-	vec3 c2 = cross( aNormal, vec3(0.0, 1.0, 0.0) );
+  vec3 c1 = cross( aNormal, vec3(0.0, 0.0, 1.0) );
+  vec3 c2 = cross( aNormal, vec3(0.0, 1.0, 0.0) );
 
-	if ( length(c1) > length(c2) )	{
-		tangent = c1;
-	}	else {
-		tangent = c2;
-	}
+  if ( length(c1) > length(c2) )  {
+    tangent = c1;
+  }  else {
+    tangent = c2;
+  }
 
-	tangent = normalize(tangent);
+  tangent = normalize(tangent);
 
-	binormal = cross(aNormal, tangent);
-	binormal = normalize(binormal);
+  binormal = cross(aNormal, tangent);
+  binormal = normalize(binormal);
 
-	mat3 TBNMatrix = mat3( (vec3 (uMVOMatrix * vec4 (tangent, 0.0))), 
-	                       (vec3 (uMVOMatrix * vec4 (binormal, 0.0))), 
-	                       (vec3 (uMVOMatrix * vec4 (aNormal, 0.0)))
-	                     );
+  mat3 TBNMatrix = mat3( (vec3 (uMVOMatrix * vec4 (tangent, 0.0))), 
+                         (vec3 (uMVOMatrix * vec4 (binormal, 0.0))), 
+                         (vec3 (uMVOMatrix * vec4 (aNormal, 0.0)))
+                       );
 
-	eyeVec = vec3(uMVOMatrix * vec4(aVertexPosition,1.0)) * TBNMatrix;
+  eyeVec = vec3(uMVOMatrix * vec4(aVertexPosition,1.0)) * TBNMatrix;
 #endif
 
-
-#if lightDirectional
+#if lightSpot && hasShadow
     for (int i = 0; i < loopCount; i++)
     {
-	    lightDir[i] = uNMatrix * lights[i].lDir;
-    }
-#endif
-
-#if lightSpot
-    for (int i = 0; i < loopCount; i++)
-    {
-	    lightDir[i] = uNMatrix * lights[i].lDir;
-      lightPos[i] = (uMVMatrix*vec4(lights[i].lPos,1.0)).xyz;
 #if hasShadow
       shadowProj[i] = spMatrix[i] * (uOMatrix * vec4(aVertexPosition, 1.0));
 #endif      
     }
 #endif
 
-#if lightPoint
-    for (int i = 0; i < loopCount; i++)
-    {
-      lightDir[i] = uNMatrix*normalize(lights[i].lPos-(uOMatrix * vec4(aVertexPosition, 1.0)).xyz);
-      lightPos[i] = (uMVMatrix*vec4(lights[i].lPos,1.0)).xyz;
-    }
-#endif
 
 #if hasEnvSphereMap
 #if hasNormalMap
- 	u = normalize( vPosition.xyz );
+   u = normalize( vPosition.xyz );
  #else
   vec3 ws = (uMVMatrix * vec4(aVertexPosition,1.0)).xyz;
-	vec3 u = normalize( vPosition.xyz );
-	vec3 r = reflect(ws, vNormal );
-	float m = 2.0 * sqrt( r.x*r.x + r.y*r.y + (r.z+1.0)*(r.z+1.0) );
-	vEnvTextureCoord.s = r.x/m + 0.5;
-	vEnvTextureCoord.t = r.y/m + 0.5;
+  vec3 u = normalize( vPosition.xyz );
+  vec3 r = reflect(ws, vNormal );
+  float m = 2.0 * sqrt( r.x*r.x + r.y*r.y + (r.z+1.0)*(r.z+1.0) );
+  vEnvTextureCoord.s = r.x/m + 0.5;
+  vEnvTextureCoord.t = r.y/m + 0.5;
 #endif
 #endif
 
@@ -19897,30 +19737,30 @@ float unpackFloatFromVec4i(const vec4 value)
 #if softShadow
 float getShadowVal(sampler2D shadowTex,vec4 shadowCoord, float proj, float texel_size) {
   vec2 filterTaps[6]; 
-	filterTaps[0] = vec2(-0.326212,-0.40581);
-	filterTaps[1] = vec2(-0.840144,-0.07358);
-	filterTaps[2] = vec2(-0.695914,0.457137);
-	filterTaps[3] = vec2(-0.203345,0.620716);
-	filterTaps[4] = vec2(0.96234,-0.194983);
-	filterTaps[5] = vec2(0.473434,-0.480026); 
-/*	filterTaps[6] = vec2(0.519456,0.767022);
-	filterTaps[7] = vec2(0.185461,-0.893124); 
-	filterTaps[8] = vec2(0.507431,0.064425);
-	filterTaps[9] = vec2(0.89642,0.412458) ;
-	filterTaps[10] =vec2(-0.32194,-0.932615);
-	filterTaps[11] =vec2(-0.791559,-0.59771); */
+  filterTaps[0] = vec2(-0.326212,-0.40581);
+  filterTaps[1] = vec2(-0.840144,-0.07358);
+  filterTaps[2] = vec2(-0.695914,0.457137);
+  filterTaps[3] = vec2(-0.203345,0.620716);
+  filterTaps[4] = vec2(0.96234,-0.194983);
+  filterTaps[5] = vec2(0.473434,-0.480026); 
+/*  filterTaps[6] = vec2(0.519456,0.767022);
+  filterTaps[7] = vec2(0.185461,-0.893124); 
+  filterTaps[8] = vec2(0.507431,0.064425);
+  filterTaps[9] = vec2(0.89642,0.412458) ;
+  filterTaps[10] =vec2(-0.32194,-0.932615);
+  filterTaps[11] =vec2(-0.791559,-0.59771); */
 
- 	float shadow = 0.0; 	
-	
-	for (int i = 0; i < 6; i++) {
+   float shadow = 0.0;   
+  
+  for (int i = 0; i < 6; i++) {
     vec4 shadowSample = texture2D(shadowTex,shadowCoord.st+filterTaps[i]*(2.0*texel_size));
 
-  	float distanceFromLight = unpackFloatFromVec4i(shadowSample);
-	
+    float distanceFromLight = unpackFloatFromVec4i(shadowSample);
+  
     if (proj > 0.0 && shadowCoord.s>=0.0 && shadowCoord.s<=1.0 && shadowCoord.t >= 0.0 && shadowCoord.t <= 1.0) {
       shadow += distanceFromLight <= shadowCoord.z ? 0.0 : 1.0 ;
     }
-	}
+  }
 
   shadow /= 6.0;
   
@@ -19930,10 +19770,10 @@ float getShadowVal(sampler2D shadowTex,vec4 shadowCoord, float proj, float texel
 float getShadowVal(sampler2D shadowTex,vec4 shadowCoord, float proj, float texel_size) {
   vec4 shadowSample = texture2D(shadowTex,shadowCoord.st);
 
-	float distanceFromLight = unpackFloatFromVec4i(shadowSample);
-	
- 	float shadow = 1.0;
- 	
+  float distanceFromLight = unpackFloatFromVec4i(shadowSample);
+  
+   float shadow = 1.0;
+   
   if (proj > 0.0 && shadowCoord.s>=0.0 && shadowCoord.s<=1.0 && shadowCoord.t >= 0.0 && shadowCoord.t <= 1.0) {
     shadow = distanceFromLight <= (shadowCoord.z) ? 0.0 : 1.0 ;
   }
@@ -19953,22 +19793,22 @@ float getShadowVal(sampler2D shadowTex,vec4 shadowCoord, float proj, float texel
 
 #if !depthPack
 #if hasColorMap
-	uniform sampler2D colorMap;
+  uniform sampler2D colorMap;
 #endif
 
 #if hasBumpMap
-	varying vec3 eyeVec; 
-	uniform sampler2D bumpMap;
+  varying vec3 eyeVec; 
+  uniform sampler2D bumpMap;
 #endif
 
 
 #if hasEnvSphereMap
-	uniform sampler2D envSphereMap;
-	uniform float envAmount;
+  uniform sampler2D envSphereMap;
+  uniform float envAmount;
 #if hasNormalMap
- 	varying vec3 u;
+   varying vec3 u;
 #else
-	varying vec2 vEnvTextureCoord;
+  varying vec2 vEnvTextureCoord;
 #endif
 #endif
 
@@ -19977,23 +19817,23 @@ float getShadowVal(sampler2D shadowTex,vec4 shadowCoord, float proj, float texel
 #endif
 
 #if hasNormalMap
-	uniform sampler2D normalMap;
+  uniform sampler2D normalMap;
 #endif
 
-	uniform float mAlpha;
+  uniform float mAlpha;
 
 #if hasAmbientMap
-	uniform sampler2D ambientMap;
+  uniform sampler2D ambientMap;
 #endif
 
 #if hasSpecularMap
-	uniform sampler2D specularMap;
+  uniform sampler2D specularMap;
 #endif
 
 #endif // !depthPack
 
 #if hasAlphaMap
-	uniform sampler2D alphaMap;
+  uniform sampler2D alphaMap;
 #endif
 
 #if lightPoint||lightDirectional||lightSpot||lightArea
@@ -20009,17 +19849,12 @@ float getShadowVal(sampler2D shadowTex,vec4 shadowCoord, float proj, float texel
     #endif
   };
   uniform Light lights[loopCount];  
-	varying vec3 lightDir[loopCount];
 #endif
 
 uniform vec3 mSpec;
 uniform float mShine;
 uniform vec3 lAmb;
 
-
-#if lightPoint||lightSpot
-  varying vec3 lightPos[loopCount];
-#endif
 
 
 varying vec4 vPosition;
@@ -20031,9 +19866,9 @@ void main(void)
 #if depthPack
   vec2 texCoord = vTextureCoord;
 #else
-	vec3 n;
-	vec4 color = vec4(0.0,0.0,0.0,0.0);
-	
+  vec3 n;
+  vec4 color = vec4(0.0,0.0,0.0,0.0);
+  
 #if hasBumpMap
   float height = texture2D(bumpMap, vTextureCoord.xy).r;  
   float v = (height) * 0.05 - 0.04; // * scale and - bias 
@@ -20041,38 +19876,38 @@ void main(void)
   vec2 texCoord = vTextureCoord.xy + (eye.xy * v);
 #else 
 //#if hasColorMap||hasBumpMap||hasNormalMap||hasAmbientMap||hasSpecularMap||hasAlphaMap
-	vec2 texCoord = vTextureCoord;
+  vec2 texCoord = vTextureCoord;
 //#endif
 #endif
 
 
 #if hasNormalMap
- 		vec3 bumpNorm = vec3(texture2D(normalMap, texCoord));
+     vec3 bumpNorm = vec3(texture2D(normalMap, texCoord));
 
-		n = (vec4(normalize(vNormal),1.0)).xyz;
+    n = (vec4(normalize(vNormal),1.0)).xyz;
     bumpNorm = (bumpNorm-0.5)*2.0;
     bumpNorm.y = -bumpNorm.y;
     n = normalize((n+bumpNorm)/2.0);
 #else
-		n = normalize(vNormal);
+    n = normalize(vNormal);
 #endif
 
 
 #if hasColorMap
 #if !(lightPoint||lightDirectional||lightSpot||lightArea)
-	color = texture2D(colorMap, vec2(texCoord.s, texCoord.t)).rgba;
-	//vec4(lAmb,1.0)*
+  color = texture2D(colorMap, vec2(texCoord.s, texCoord.t)).rgba;
+  //vec4(lAmb,1.0)*
 #else
   color = texture2D(colorMap, vec2(texCoord.s, texCoord.t)).rgba;
   color.rgb *= mColor;
 #endif
   if (color.a<=0.9) discard;  
 #else
-	color = vec4(mColor,1.0);
+  color = vec4(mColor,1.0);
 #endif
 
 #if hasAlphaMap
-	color.a = texture2D(alphaMap, texCoord).r;
+  color.a = texture2D(alphaMap, texCoord).r;
 #if alphaDepth
   if (color.a < 0.9) discard;
 #else
@@ -20084,7 +19919,7 @@ void main(void)
 #endif
 #else
 #if hasAlpha
-	color.a = mAlpha;
+  color.a = mAlpha;
 #endif
 #endif
 
@@ -20095,41 +19930,37 @@ vec3 accum = lAmb;
 
 
 #if lightPoint
-  float dist;
-	float NdotL;
 
-	float NdotHV = 0.0;
-  float att = 0.0;
-
-  vec3 halfVector;
   vec3 specTotal = vec3(0.0,0.0,0.0);
 
   for (int i = 0; i < loopCount; i++) {
+
+    vec3 lDir = lights[i].lPos-vPosition.xyz;
+
+    float dist = length(lDir);
   
-	  halfVector = normalize(vec3(0.0,0.0,1.0)+lightDir[i]);
+    vec3 halfVector = normalize(vec3(0.0,0.0,1.0)+lDir);
 
-    dist = length(lightPos[i]-vPosition.xyz);
+    float NdotL = max(dot(normalize(lDir),n),0.0);
 
-  	NdotL = max(dot(normalize(lightDir[i]),n),0.0);
+    if (NdotL > 0.0) {
+      // basic diffuse
+      float att = clamp(((lights[i].lDist-dist)/lights[i].lDist), 0.0, 1.0)*lights[i].lInt;
 
-  	if (NdotL > 0.0) {
-  		// basic diffuse
-      att = clamp(((lights[i].lDist-dist)/lights[i].lDist), 0.0, 1.0)*lights[i].lInt;
+      accum += att * NdotL * lights[i].lDiff * mDiff;
 
-  		accum += att * NdotL * lights[i].lDiff * mDiff;
+       float NdotHV = max(dot(n, halfVector),0.0);
 
-   		NdotHV = max(dot(n, halfVector),0.0);
-
-	
-	    #if hasSpecularMap
-			  vec3 spec2 = lights[i].lSpec * texture2D(specularMap, vec2(texCoord.s, texCoord.t)).rgb * pow(NdotHV,mShine);
-	    #else
-			  vec3 spec2 = lights[i].lSpec * mSpec * pow(NdotHV,mShine);
-	    #endif
+  
+      #if hasSpecularMap
+        vec3 spec2 = lights[i].lSpec * texture2D(specularMap, vec2(texCoord.s, texCoord.t)).rgb * pow(NdotHV,mShine);
+      #else
+        vec3 spec2 = lights[i].lSpec * mSpec * pow(NdotHV,mShine);
+      #endif
   
         specTotal += spec2;
-  	}
-  	
+    }
+    
   }
   
   color.rgb *= accum;
@@ -20145,18 +19976,18 @@ vec3 accum = lAmb;
   vec3 specTotal = vec3(0.0,0.0,0.0);
   vec3 spec2 = vec3(0.0,0.0,0.0);
 
-	vec3 halfVector;
+  vec3 halfVector;
   
   for (int i = 0; i < loopCount; i++) {
 
-	  halfVector = normalize(vec3(0.0,0.0,1.0)-lightDir[i]);
+    halfVector = normalize(vec3(0.0,0.0,1.0)-lights[i].lDir);
 
-  	NdotL = max(dot(normalize(-lightDir[i]),n),0.0);
+    NdotL = max(dot(normalize(-lights[i].lDir),n),0.0);
 
-  	if (NdotL > 0.0) 	{
-  		accum += lights[i].lInt * mDiff * lights[i].lDiff * NdotL;		
+    if (NdotL > 0.0)   {
+      accum += lights[i].lInt * mDiff * lights[i].lDiff * NdotL;    
 
-   		NdotHV = max(dot(n, halfVector),0.0);
+       NdotHV = max(dot(n, halfVector),0.0);
 
       #if hasSpecularMap
         spec2 = lights[i].lSpec * texture2D(specularMap, vec2(texCoord.s, texCoord.t)).rgb * pow(NdotHV,mShine);
@@ -20165,7 +19996,7 @@ vec3 accum = lAmb;
       #endif
       
       specTotal += spec2;
-  	}
+    }
   }  
   
   color.rgb *= accum;
@@ -20177,10 +20008,13 @@ vec3 accum = lAmb;
   vec3 specTotal = vec3(0.0,0.0,0.0);
   vec3 spec2 = vec3(0.0,0.0,0.0);
 
-	vec3 halfVector;
+  vec3 halfVector;
+  float spotEffect;
+  float spotDot;
+  float power;
   
   for (int i = 0; i < loopCount; i++) {
-    vec3 l = lightPos[i]-vPosition.xyz;
+    vec3 l = lights[i].lPos-vPosition.xyz;
     
     float dist = length(l);
 
@@ -20188,9 +20022,14 @@ vec3 accum = lAmb;
 
     att = clamp(att,0.0,1.0);
 
-    float spotDot = dot(normalize(-l), normalize(lightDir[i]));
+    spotDot = dot(normalize(-l), normalize(lights[i].lDir));
 
-    float spotEffect = (spotDot < cos((lights[i].lCut/2.0)*(3.14159/180.0))) ? 0.0 : pow(spotDot, 1.0);
+    if ( spotDot < cos((lights[i].lCut/2.0)*(3.14159/180.0)) ) {
+      spotEffect = 0.0;
+    }
+    else {
+      spotEffect = pow(spotDot, 1.0);
+    }
 
     att *= spotEffect;
 
@@ -20200,44 +20039,49 @@ vec3 accum = lAmb;
     float NdotL = max(0.0, dot(n, normalize(l)));
     float NdotH = max(0.0, dot(n, h));
 
-    float power = (NdotL > 0.0) ?  pow(NdotH, mShine) : 0.0;
+    if (NdotL > 0.0) {
+      power = pow(NdotH, mShine);
+    }
+    else {
+      power = 0.0;
+    }
 
 #if hasShadow
     vec4 shadowCoord = shadowProj[i] / shadowProj[i].w;
-		
+    
     shadowCoord.z = DepthRangeA(ConvertDepth3A(shadowCoord.z,lDepth[i].x,lDepth[i].y),lDepth[i].x,lDepth[i].y);
 
     vec4 shadowSample;
 
     float shadow = 1.0;
-// this seems to get around a shader crash ...		
-		if (i == 0) { shadow = getShadowVal(lDepthTex[0],shadowCoord,shadowProj[i].w,lDepth[i].z);} 
-#if loopCount>1		
-		else if (i == 1) { shadow = getShadowVal(lDepthTex[1],shadowCoord,shadowProj[i].w,lDepth[i].z); }
+// this seems to get around a shader crash ...    
+    if (i == 0) { shadow = getShadowVal(lDepthTex[0],shadowCoord,shadowProj[i].w,lDepth[i].z);} 
+#if loopCount>1    
+    else if (i == 1) { shadow = getShadowVal(lDepthTex[1],shadowCoord,shadowProj[i].w,lDepth[i].z); }
 #endif
-#if loopCount>2		
-		else if (i == 2) { shadow = getShadowVal(lDepthTex[2],shadowCoord,shadowProj[i].w,lDepth[i].z); }
+#if loopCount>2    
+    else if (i == 2) { shadow = getShadowVal(lDepthTex[2],shadowCoord,shadowProj[i].w,lDepth[i].z); }
 #endif
 #if loopCount>3
-		else if (i == 3) { shadow = getShadowVal(lDepthTex[3],shadowCoord,shadowProj[i].w,lDepth[i].z);	}
+    else if (i == 3) { shadow = getShadowVal(lDepthTex[3],shadowCoord,shadowProj[i].w,lDepth[i].z);  }
 #endif
-#if loopCount>4		
-		else if (i == 4) { shadow = getShadowVal(lDepthTex[4],shadowCoord,shadowProj[i].w,lDepth[i].z);	}
+#if loopCount>4    
+    else if (i == 4) { shadow = getShadowVal(lDepthTex[4],shadowCoord,shadowProj[i].w,lDepth[i].z);  }
 #endif
-#if loopCount>5		
-		else if (i == 5) { shadow = getShadowVal(lDepthTex[5],shadowCoord,shadowProj[i].w,lDepth[i].z);	}
+#if loopCount>5    
+    else if (i == 5) { shadow = getShadowVal(lDepthTex[5],shadowCoord,shadowProj[i].w,lDepth[i].z);  }
 #endif
-#if loopCount>6		
-		else if (i == 6) { shadow = getShadowVal(lDepthTex[6],shadowCoord,shadowProj[i].w,lDepth[i].z);	}
+#if loopCount>6    
+    else if (i == 6) { shadow = getShadowVal(lDepthTex[6],shadowCoord,shadowProj[i].w,lDepth[i].z);  }
 #endif
 #if loopCount>7
-		else if (i == 7) { shadow = getShadowVal(lDepthTex[7],shadowCoord,shadowProj[i].w,lDepth[i].z); }
+    else if (i == 7) { shadow = getShadowVal(lDepthTex[7],shadowCoord,shadowProj[i].w,lDepth[i].z); }
 #endif
-	 		
+       
      att = att * shadow;
 #endif
 
-		accum += att * lights[i].lDiff * mDiff * NdotL;		
+    accum += att * lights[i].lDiff * mDiff * NdotL;    
     
     #if hasSpecularMap
       spec2 = lights[i].lSpec * texture2D(specularMap, vec2(texCoord.s, texCoord.t)).rgb * power;
@@ -20272,25 +20116,25 @@ vec3 accum = lAmb;
 
 #if hasEnvSphereMap
 #if hasNormalMap
-	vec3 r = reflect( u, n );
-	float m = 2.0 * sqrt( r.x*r.x + r.y*r.y + (r.z+1.0)*(r.z+1.0) );
+  vec3 r = reflect( u, n );
+  float m = 2.0 * sqrt( r.x*r.x + r.y*r.y + (r.z+1.0)*(r.z+1.0) );
 
-	vec3 coord;
-	coord.s = r.x/m + 0.5;
-	coord.t = r.y/m + 0.5;
-	
+  vec3 coord;
+  coord.s = r.x/m + 0.5;
+  coord.t = r.y/m + 0.5;
+  
   #if hasReflectMap
-		color.rgb += mColor*accum*texture2D( envSphereMap, coord.st).rgb * environmentAmount;
-	 #else
-		color.rgb += mColor*accum*texture2D( envSphereMap, coord.st).rgb * envAmount;
-	 #endif
+    color.rgb += mColor*accum*texture2D( envSphereMap, coord.st).rgb * environmentAmount;
+   #else
+    color.rgb += mColor*accum*texture2D( envSphereMap, coord.st).rgb * envAmount;
+   #endif
 
 #else
-	#if hasReflectMap
- 	  color.rgb += mColor*accum*texture2D( envSphereMap, vEnvTextureCoord).rgb * environmentAmount;
-	#else
-	 	color.rgb += mColor*accum*texture2D( envSphereMap, vEnvTextureCoord).rgb*envAmount;
-	#endif
+  #if hasReflectMap
+     color.rgb += mColor*accum*texture2D( envSphereMap, vEnvTextureCoord).rgb * environmentAmount;
+  #else
+     color.rgb += mColor*accum*texture2D( envSphereMap, vEnvTextureCoord).rgb*envAmount;
+  #endif
 #endif
 
 #endif
@@ -20301,11 +20145,11 @@ vec3 accum = lAmb;
 #if lightPoint||lightDirectional||lightSpot||lightArea
   color.rgb += texture2D(ambientMap, texCoord).rgb*(vec3(1.0,1.0,1.0)+mColor*mAmb);
 #else
-  color.rgb = color.rgb*texture2D(ambientMap, texCoord).rgb;							
+  color.rgb = color.rgb*texture2D(ambientMap, texCoord).rgb;              
 #endif
 #else
 #if !hasColorMap
-	color.rgb += mColor*mAmb;
+  color.rgb += mColor*mAmb;
 #else
   color.rgb += mAmb*texture2D(colorMap, texCoord).rgb;
 #endif
@@ -20327,7 +20171,7 @@ gl_FragColor = clamp(color,0.0,1.0);
 #if depthPack
 
 #if hasAlphaMap
-	float alphaVal = texture2D(alphaMap, texCoord).r;
+  float alphaVal = texture2D(alphaMap, texCoord).r;
   if (alphaVal < 0.9) discard;
 #endif
 
@@ -20335,6 +20179,7 @@ gl_FragColor = clamp(color,0.0,1.0);
 #endif
 
 }
+
 </script>
     <script id="cubicvr-fx-general-vs" type="x-shader/x-vertex">
 attribute vec3 aVertex;
